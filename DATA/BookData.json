@@ -1,0 +1,18 @@
+[
+    {
+        "BookID": "B001",
+        "Title": "Introduction to Algorithms",
+        "Author": "Thomas H. Cormen",
+        "Publisher": "MIT Press",
+        "Available": 5,
+        "OnLoan": 2
+    },
+    {
+        "BookID": "A001",
+        "Title": "Artificial Intelligence: A Modern Approach",
+        "Author": "Stuart Russell",
+        "Publisher": "MIT Press",
+        "Available": 0,
+        "OnLoan": 0
+    }
+]

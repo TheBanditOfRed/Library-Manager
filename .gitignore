@@ -1,0 +1,101 @@
+# Compiled class files
+*.class
+out/
+/target/
+
+# Log files
+*.log
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf
+.idea/httpRequests
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/contentModel.xml
+.idea/sonarlint/
+.idea/.name
+.idea/*.local.xml
+.idea/libraries-with-intellij-classes.xml
+
+# Eclipse 
+.settings/
+.classpath
+.project
+.metadata/
+
+# NetBeans
+/nbproject/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Backup files
+*.bak
+*.swp
+*.swo
+
+# Local configuration files
+application-local.properties
+application-dev.properties
+
+# User-specific files
+*.iml
+*.iws
+*.ipr
+
+# Test specific
+/test-output/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+temp/
+tmp/
+
+# Security sensitive files - uncomment if needed
+# /DATA/UserData.json
