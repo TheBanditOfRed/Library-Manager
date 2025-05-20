@@ -1,3 +1,7 @@
+# THIS PROJECT IS IN ACTIVE DEVELOPMENT
+# NOT ALL LISTED FEATURES ARE IMPLEMENTED YET
+
+---
 
 # Library Manager - Library Management System
 

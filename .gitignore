@@ -96,3 +96,6 @@ pids
 # Temporary files
 temp/
 tmp/
+
+# Miscellaneous
+library_project_en.md
