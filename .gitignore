@@ -96,6 +96,3 @@ pids
 # Temporary files
 temp/
 tmp/
-
-# Security sensitive files - uncomment if needed
-# /DATA/UserData.json

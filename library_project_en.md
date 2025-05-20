@@ -133,6 +133,6 @@ Adding 5 copies of *"Amor de Perdição"* by *Camilo Castelo Branco* to shelf 1.
 Final grade = `oral defense × min(20, base grade + bonus features)`
 
 - Bonus Features:
-  - GUI.GUI: +0.5
+  - main.ui.GUI.main.ui.GUI: +0.5
   - Auto late day calc: +0.5
   - **Total possible bonus: +1.0**
