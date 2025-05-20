@@ -11,6 +11,10 @@ import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
+/**
+ * Manages encryption and decryption operations for sensitive data in the library management system.
+ * Uses AES-GCM encryption with PBKDF2 key derivation for secure data protection.
+ */
 public class SecurityManager {
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
@@ -18,6 +22,20 @@ public class SecurityManager {
     private static final int KEY_LENGTH = 256;
     private static final int ITERATION_COUNT = 65536;
 
+    /**
+     * Encrypts a string using AES-GCM with a password-derived key.
+     * The encryption process includes:
+     * 1. Generating a random salt for key derivation
+     * 2. Deriving an AES key from the password using PBKDF2
+     * 3. Generating a random initialization vector (IV)
+     * 4. Encrypting the plaintext with AES-GCM
+     * 5. Combining salt, IV, and ciphertext into a single Base64-encoded string
+     *
+     * @param plaintext The text to encrypt
+     * @param password The password to derive the encryption key from
+     * @return A Base64-encoded string containing the salt, IV, and encrypted data
+     * @throws RuntimeException if encryption fails
+     */
     public static String encrypt(String plaintext, String password){
         try {
             byte[] salt = new byte[SALT_LENGTH];
@@ -48,6 +66,19 @@ public class SecurityManager {
         }
     }
 
+    /**
+     * Decrypts a string that was encrypted with the encrypt() method.
+     * The decryption process includes:
+     * 1. Base64-decoding the input string
+     * 2. Extracting the salt, IV, and encrypted data
+     * 3. Deriving the key from the password using the extracted salt
+     * 4. Decrypting the data using AES-GCM
+     *
+     * @param ciphertext The Base64-encoded encrypted string (containing salt, IV, and encrypted data)
+     * @param password The password to derive the decryption key from
+     * @return The decrypted plaintext string
+     * @throws RuntimeException if decryption fails (e.g., wrong password or tampered data)
+     */
     public static String decrypt(String ciphertext, String password){
         try {
             byte[] decoded = Base64.getDecoder().decode(ciphertext);
@@ -75,6 +106,15 @@ public class SecurityManager {
         }
     }
 
+    /**
+     * Derives a cryptographic key from a password using PBKDF2 with HMAC-SHA256.
+     * Uses a provided salt and a fixed iteration count to derive the key.
+     *
+     * @param password The password to derive the key from
+     * @param salt The salt to use for key derivation
+     * @return A SecretKey object suitable for AES encryption
+     * @throws Exception if key derivation fails
+     */
     private static SecretKey getKeyFromPassword(String password, byte[] salt) throws Exception {
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");

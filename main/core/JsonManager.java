@@ -9,9 +9,19 @@ import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Utility class for handling JSON file operations in the library management system.
+ * Provides methods for reading and writing JSON objects and arrays to files.
+ */
 public class JsonManager {
     private static final Logger logger = Logger.getLogger(JsonManager.class.getName());
 
+    /**
+     * Reads a JSON file and returns it as a JsonObject.
+     *
+     * @param filePath Path to the JSON file to be read
+     * @return JsonObject representation of the file content, or null if an error occurs
+     */
     public static JsonObject readJsonFile(String filePath) {
         try (Reader reader = new FileReader(filePath)) {
             return JsonParser.parseReader(reader).getAsJsonObject();
@@ -21,6 +31,12 @@ public class JsonManager {
         }
     }
 
+    /**
+     * Reads a JSON file and returns it as a JsonArray.
+     *
+     * @param filePath Path to the JSON file to be read
+     * @return JsonArray representation of the file content, or null if an error occurs
+     */
     public static JsonArray readJsonArrayFile(String filePath) {
         try (Reader reader = new FileReader(filePath)) {
             return JsonParser.parseReader(reader).getAsJsonArray();
@@ -30,6 +46,13 @@ public class JsonManager {
         }
     }
 
+    /**
+     * Saves a JsonObject to a file with pretty printing.
+     *
+     * @param jsonObject The JsonObject to be saved
+     * @param filePath Path where the JSON file should be saved
+     * @return true if the operation was successful, false otherwise
+     */
     public static boolean saveJsonFile(JsonObject jsonObject, String filePath) {
         try (java.io.FileWriter writer = new java.io.FileWriter(filePath)) {
             com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
@@ -42,6 +65,13 @@ public class JsonManager {
         }
     }
 
+    /**
+     * Saves a JsonArray to a file with pretty printing.
+     *
+     * @param jsonArray The JsonArray to be saved
+     * @param filePath Path where the JSON file should be saved
+     * @return true if the operation was successful, false otherwise
+     */
     public static boolean saveJsonArrayFile(JsonArray jsonArray, String filePath) {
         try (java.io.FileWriter writer = new java.io.FileWriter(filePath)) {
             com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
@@ -53,6 +83,17 @@ public class JsonManager {
             return false;
         }
     }
+
+    /**
+     * Updates the due status of a borrowed book for a specific user in the database.
+     * Finds the user by decrypting user IDs, then locates and updates the specific book's status.
+     *
+     * @param currentUser The ID of the user who borrowed the book
+     * @param bookId The ID of the book whose status needs to be updated
+     * @param statusActual The new status code (1: on time, 0: due today, -1: overdue)
+     * @param userDatabasePath Path to the user database file
+     * @param key The encryption key (user's password) for decrypting user IDs
+     */
     public static void saveJsonDueStatus(String currentUser, String bookId, int statusActual, String userDatabasePath, String key) {
         try {
             JsonObject userData = JsonManager.readJsonFile(userDatabasePath);

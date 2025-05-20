@@ -7,12 +7,22 @@ import java.util.regex.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Manages database operations for the library management system, handling user authentication,
+ * book searches, and borrowing status.
+ */
 public class DataBaseManager {
-    //! SET FINAL PATHS BEFORE FINISHING PROJECT
-
     public final String BOOK_DATABASE_PATH = "main/resources/data/BookData.json";
     public final String USER_DATABASE_PATH = "main/resources/data/UserData.json";
 
+    /**
+     * Finds a user in the database based on ID and password.
+     * Attempts to decrypt stored user IDs to find a match.
+     *
+     * @param id The user ID to look for
+     * @param password The password to use for decryption
+     * @return JsonObject containing user data if found, null otherwise
+     */
     public JsonObject findUser(String id, String password) {
         try{
             JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
@@ -46,6 +56,13 @@ public class DataBaseManager {
         }
     }
 
+    /**
+     * Searches for books in the database based on the provided search term.
+     * Matches against book ID, title, author, publisher, and shelf number.
+     *
+     * @param searchTerm The term to search for (empty string returns all books)
+     * @return JsonArray of books that match the search criteria
+     */
     public JsonArray findBooks(String searchTerm) {
         JsonArray filteredBooks = new JsonArray();
         JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
@@ -68,6 +85,13 @@ public class DataBaseManager {
         return filteredBooks;
     }
 
+    /**
+     * Finds all books borrowed by a specific user.
+     *
+     * @param userID The ID of the user
+     * @param password The password used for decryption
+     * @return JsonArray of books borrowed by the user
+     */
     public JsonArray findBorrowedBooks(String userID, String password) {
         JsonArray borrowedBooks = new JsonArray();
         JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
@@ -101,6 +125,12 @@ public class DataBaseManager {
         return borrowedBooks;
     }
 
+    /**
+     * Gets the title of a book from its ID.
+     *
+     * @param bookID The ID of the book
+     * @return The title of the book, or null if not found
+     */
     public String getBookTitle(String bookID) {
         JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
         if (bookData != null) {
@@ -114,6 +144,15 @@ public class DataBaseManager {
         return null;
     }
 
+    /**
+     * Calculates the shelf number from a book ID.
+     * The first one or two letters of the book ID represent the shelf code.
+     * The shelf number is calculated by converting the letters to numbers (A=1, B=2, etc.)
+     * and using a base-26 calculation.
+     *
+     * @param bookID The ID of the book
+     * @return The calculated shelf number, or -1 if invalid format
+     */
     public int getShelfNumber(String bookID) {
         Pattern pattern = Pattern.compile("^[A-Z]{1,2}");
         Matcher matcher = pattern.matcher(bookID);
@@ -131,6 +170,14 @@ public class DataBaseManager {
         return -1;
     }
 
+    /**
+     * Calculates the due date for a book based on the issue date and user type.
+     * Students get 15 days, General Public gets 7 days.
+     *
+     * @param issueDate The date the book was issued (in format "YYYY-MM-DD")
+     * @param userType The type of user ("Students" or "General Public")
+     * @return The due date in "YYYY-MM-DD" format, or null if invalid
+     */
     public String getDueDate(String issueDate, String userType) {
         Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
         Matcher matcher = pattern.matcher(issueDate);
@@ -158,6 +205,13 @@ public class DataBaseManager {
         return null;
     }
 
+    /**
+     * Determines the status of a book based on issue date and due date.
+     *
+     * @param issueDate The date the book was issued (in format "YYYY-MM-DD")
+     * @param dueDate The date the book is due (in format "YYYY-MM-DD")
+     * @return Status code: 1 for on time, 0 for due today, -1 for overdue
+     */
     public int getDueStatus(String issueDate, String dueDate) {
         Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
         Matcher matcher = pattern.matcher(issueDate);
@@ -183,6 +237,13 @@ public class DataBaseManager {
         return -1;
     }
 
+    /**
+     * Determines the user type (Students, General Public, Admins) for a given user ID.
+     *
+     * @param userId The ID of the user
+     * @param password The password for decryption
+     * @return The user type as a string, or null if not found
+     */
     public String getUserType(String userId, String password) {
         JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
 
@@ -321,6 +382,14 @@ public class DataBaseManager {
         return JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
     }
 
+    /**
+     * Updates the due status of a book for a specific user.
+     *
+     * @param currentUser The ID of the user who borrowed the book
+     * @param bookId The ID of the book
+     * @param statusActual The new status code: 1 (on time), 0 (due today), -1 (overdue)
+     * @param key The encryption key (user's password)
+     */
     public void updateDueStatus(String currentUser, String bookId, int statusActual, String key) {
         try {
             JsonManager.saveJsonDueStatus(currentUser, bookId, statusActual, USER_DATABASE_PATH, key);
