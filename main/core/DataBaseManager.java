@@ -271,112 +271,7 @@ public class DataBaseManager {
         return null;
     }
 
-    //! Only used for testing remove before finishing project
-    public void encryptAllData() {
-        try {
-            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
 
-            for (String userType : new String[]{"Students", "General Public", "Admins"}) {
-
-                JsonArray users;
-                if (userData != null) {
-                    users = userData.getAsJsonArray(userType);
-                } else {
-                    System.out.println("No user data found for type: " + userType);
-                    continue;
-                }
-
-                for (int i = 0; i < users.size(); i++) {
-                    JsonObject user = users.get(i).getAsJsonObject();
-                    String password = user.get("Password").getAsString();
-
-                    // Encrypt the name
-                    String name = user.get("Name").getAsString();
-                    String encryptedName = SecurityManager.encrypt(name, password);
-                    user.addProperty("Name", encryptedName);
-
-                    // Encrypt the user ID
-                    String userId = user.get("UserID").getAsString();
-                    String encryptedUserId = SecurityManager.encrypt(userId, password);
-                    user.addProperty("UserID", encryptedUserId);
-
-                    // If this user has books, encrypt the date issued
-                    if (user.has("Books") && !user.get("Books").isJsonNull()) {
-                        JsonArray books = user.getAsJsonArray("Books");
-                        for (int j = 0; j < books.size(); j++) {
-                            JsonObject book = books.get(j).getAsJsonObject();
-                            String dateIssued = book.get("DateIssued").getAsString();
-                            String encryptedDate = SecurityManager.encrypt(dateIssued, password);
-                            book.addProperty("DateIssued", encryptedDate);
-                        }
-                    }
-
-                    // Encrypt password
-                    String encryptedPassword = SecurityManager.encrypt(password, password);
-                    user.addProperty("Password", encryptedPassword);
-                }
-            }
-
-            boolean userDataSaved = saveUserData(userData);
-            if (!userDataSaved) {
-                System.out.println("Failed to save user data.");
-                return;
-            }
-
-            System.out.println("User data encrypted successfully.");
-        } catch (Exception e) {
-            System.err.println("Failed to encrypt user data: " + e.getMessage());
-        }
-    }
-
-    //! Only used for testing remove before finishing project
-    public void decryptAllData() {
-        try {
-            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
-
-            for (String userType : new String[]{"Students", "General Public", "Admins"}) {
-
-                JsonArray users;
-                if (userData != null) {
-                    users = userData.getAsJsonArray(userType);
-                } else {
-                    System.out.println("No user data found for type: " + userType);
-                    continue;
-                }
-
-                for (int i = 0; i < users.size(); i++) {
-                    JsonObject user = users.get(i).getAsJsonObject();
-                    String password = user.get("Password").getAsString();
-
-                    // Encrypt the name
-                    String name = user.get("Name").getAsString();
-                    String decryptedName = SecurityManager.decrypt(name, password);
-                    user.addProperty("Name", decryptedName);
-
-                    // If this user has books, encrypt the date issued
-                    if (user.has("Books") && !user.get("Books").isJsonNull()) {
-                        JsonArray books = user.getAsJsonArray("Books");
-                        for (int j = 0; j < books.size(); j++) {
-                            JsonObject book = books.get(j).getAsJsonObject();
-                            String dateIssued = book.get("DateIssued").getAsString();
-                            String decryptedDate = SecurityManager.decrypt(dateIssued, password);
-                            book.addProperty("DateIssued", decryptedDate);
-                        }
-                    }
-                }
-            }
-
-            boolean userDataSaved = saveUserData(userData);
-            if (!userDataSaved) {
-                System.out.println("Failed to save user data.");
-                return;
-            }
-
-            System.out.println("User data decrypted successfully.");
-        } catch (Exception e) {
-            System.err.println("Failed to decrypted user data: " + e.getMessage());
-        }
-    }
 
     public boolean saveUserData(JsonObject userData) {
         return JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
@@ -397,4 +292,49 @@ public class DataBaseManager {
             System.err.println("Failed to update due status: " + e.getMessage());
         }
     }
+
+    /**
+     * Generates a unique book ID based on the shelf number and book title.
+     * The ID consists of a shelf code (A-Z, AA-ZZ) and a six-digit hash of the book title.
+     *
+     * @param shelfNumber The shelf number as a string
+     * @param bookTitle The title of the book
+     * @return A unique book ID or null if the shelf number is invalid
+     */
+    public String generateBookID(String shelfNumber, String bookTitle) {
+        String shelfCode = generateShelfCode(Integer.parseInt(shelfNumber));
+
+        if (shelfCode.isEmpty()) {
+            return null;
+        }
+
+        int hash = Math.abs(bookTitle.hashCode());
+        int sixDigitHash = hash % 1000000;
+
+        return shelfCode + String.format("%06d", sixDigitHash);
+    }
+
+    /**
+     * Generates a shelf code based on the shelf number.
+     * The first 26 shelves are represented by A-Z, and the next 676 shelves by AA-ZZ.
+     *
+     * @param shelfNumber The shelf number (1-based index)
+     * @return The shelf code as a string, or null if invalid
+     */
+    public String generateShelfCode(int shelfNumber) {
+        if (shelfNumber <= 0) {
+            return null;
+        }
+
+        if (shelfNumber <= 26) {
+            return String.valueOf((char)('A' + shelfNumber - 1));
+        } else if (shelfNumber <= 702) {
+            int firstChar = (shelfNumber - 27) / 26 + 'A';
+            int secondChar = (shelfNumber - 27) % 26 + 'A';
+            return String.valueOf((char)firstChar) + (char)secondChar;
+        } else {
+            return null;
+        }
+    }
+
 }

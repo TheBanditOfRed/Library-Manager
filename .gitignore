@@ -27,20 +27,17 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
-# IntelliJ IDEA
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/usage.statistics.xml
-.idea/dictionaries
-.idea/shelf
-.idea/httpRequests
-.idea/dataSources/
-.idea/dataSources.local.xml
-.idea/contentModel.xml
-.idea/sonarlint/
-.idea/.name
-.idea/*.local.xml
-.idea/libraries-with-intellij-classes.xml
+# IntelliJ IDEA files and directories
+.idea/
+**/.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+.run/
+
+# IntelliJ IDEA specific cache files
+.ideaCache/
 
 # Eclipse 
 .settings/
@@ -80,9 +77,7 @@ application-local.properties
 application-dev.properties
 
 # User-specific files
-*.iml
-*.iws
-*.ipr
+
 
 # Test specific
 /test-output/
@@ -99,3 +94,7 @@ tmp/
 
 # Miscellaneous
 library_project_en.md
+snippets.txt
+
+# Test Files
+main/core/TestDataBaseManager.java

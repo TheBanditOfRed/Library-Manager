@@ -44,6 +44,9 @@ public class TableUtils {
         table.setFillsViewportHeight(true);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer());
 
+        table.getTableHeader().setResizingAllowed(false);
+        table.getTableHeader().setReorderingAllowed(false);
+
         return new TableComponents(table, scrollPane, model);
     }
 

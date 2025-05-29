@@ -54,8 +54,8 @@ Library Manager is a comprehensive library management system designed to automat
    git clone https://github.com/TheBanditOfRed/Library-Manager.git
    ```
 
-2. Open the project in IntelliJ IDEA or your preferred Java IDE
+2. Open the project in your preferred Java IDE
 
 3. Make sure the GSON library is properly included in your project dependencies
 
-4. Run the main application class (`main.ui.GUI`)
+4. Run the main application class (`main.LibraryManagementSystem`)
