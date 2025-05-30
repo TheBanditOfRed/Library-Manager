@@ -91,6 +91,10 @@ public class GUI extends JFrame {
         gbc.gridy = 2;
         loginPanel.add(loginButton, gbc);
 
+        idField.addActionListener(_ -> passwordField.requestFocusInWindow());
+
+        passwordField.addActionListener(_ -> loginButton.doClick());
+
         loginButton.addActionListener(_ -> {
             String id = idField.getText();
 
@@ -376,6 +380,8 @@ public class GUI extends JFrame {
 
         loadBrowseBooksToTable(browseBooksTableModel, "");
 
+        searchField.addActionListener(_ -> searchButton.doClick());
+
         searchButton.addActionListener(_ -> {
             String searchTerm = searchField.getText();
             loadBrowseBooksToTable(browseBooksTableModel, searchTerm);
@@ -480,6 +486,7 @@ public class GUI extends JFrame {
      */
     private JPanel createMyBooksPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        DataBaseManager dbm = new DataBaseManager();
 
         String[] columns = {
                 ResourceManager.getString("column.title"),
@@ -516,6 +523,9 @@ public class GUI extends JFrame {
                     }
                     
                     String bookTitle = myBooksTableModel.getValueAt(selectedRow, 0).toString();
+                    String dateIssued = myBooksTableModel.getValueAt(selectedRow, 1).toString();
+                    String dateDue = myBooksTableModel.getValueAt(selectedRow, 2).toString();
+                    String status = myBooksTableModel.getValueAt(selectedRow, 3).toString();
                     
                     // Check if this is a placeholder "No books" row
                     if (bookTitle.equals(ResourceManager.getString("books.none"))) {
@@ -532,8 +542,31 @@ public class GUI extends JFrame {
                             
                     if (confirm == JOptionPane.YES_OPTION) {
                         try {
-                            // NOTE: Book return functionality not implemented yet   
-                            boolean success = true;
+                            boolean success = false;
+
+                            // TODO: Implement actual book return logic
+
+                            if (status.equals(ResourceManager.getString("status.overdue"))) {
+                                int daysOverdue = dbm.getDaysOverdue(dateIssued, dateDue);
+
+                                if (daysOverdue > 0) {
+                                    // If book is overdue, apply late fee logic
+
+                                    double lateFee = GuiHelper.calculateFee(daysOverdue, dbm.getUserType(currentUser, key));
+                                    int response = JOptionPane.showConfirmDialog(panel,
+                                            ResourceManager.getString("confirm.return.overdue", lateFee),
+                                            ResourceManager.getString("confirm"),
+                                            JOptionPane.YES_NO_OPTION);
+
+                                    if (response == JOptionPane.YES_OPTION) {
+                                        // TODO: Decide if gona impliment a payment system that emulates how it would be in the real world or just a button that says "Pay Fine"
+                                    }
+                                } else {
+                                    // If book is on time, return normally
+                                    //success = dbm.returnBook(currentUser, bookTitle, key);
+                                }
+                            }
+
                             
                             if (success) {
                                 JOptionPane.showMessageDialog(panel,

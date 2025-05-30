@@ -238,6 +238,35 @@ public class DataBaseManager {
     }
 
     /**
+     * Calculates the number of days a book is overdue based on issue date and due date.
+     *
+     * @param issueDate The date the book was issued (in format "YYYY-MM-DD")
+     * @param dueDate The date the book is due (in format "YYYY-MM-DD")
+     * @return Number of days overdue, or 0 if not overdue
+     */
+    public int getDaysOverdue(String issueDate, String dueDate) {
+        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+        Matcher matcher = pattern.matcher(issueDate);
+
+        if (matcher.find()){
+            String foundDate = matcher.group();
+            String[] dateParts = foundDate.split("-");
+            int year = Integer.parseInt(dateParts[0]);
+            int month = Integer.parseInt(dateParts[1]);
+            int day = Integer.parseInt(dateParts[2]);
+
+            LocalDate issueDateObj = LocalDate.of(year, month, day);
+            LocalDate dueDateObj = LocalDate.parse(dueDate);
+            LocalDate today = LocalDate.now();
+
+            if (issueDateObj.isAfter(dueDateObj)) {
+                return (int) java.time.temporal.ChronoUnit.DAYS.between(dueDateObj, today);
+            }
+        }
+        return 0; // Not overdue
+    }
+
+    /**
      * Determines the user type (Students, General Public, Admins) for a given user ID.
      *
      * @param userId The ID of the user
@@ -270,8 +299,6 @@ public class DataBaseManager {
 
         return null;
     }
-
-
 
     public boolean saveUserData(JsonObject userData) {
         return JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);

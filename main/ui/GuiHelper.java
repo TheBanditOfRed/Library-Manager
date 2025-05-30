@@ -95,4 +95,28 @@ public class GuiHelper {
                 book.has("Publisher") &&
                 book.has("Available");
     }
+
+    /**
+     * Calculates the overdue fee based on the number of days overdue and user type.
+     *
+     * @param daysOverdue The number of days the book is overdue
+     * @param userType The type of user (e.g., "Students", "General Public", "Admins")
+     * @return The calculated fee, or 0.0 if an error occurs
+     */
+    public static double calculateFee(int daysOverdue, String userType) {
+        try {
+            if (userType.equals("Students")) {
+                return daysOverdue * 0.5f;
+            } else if (userType.equals("General Public")) {
+                return daysOverdue * 1.0f;
+            } else if (userType.equals("Admins")) {
+                return 0.0f;
+            } else {
+                throw new IllegalArgumentException("Unknown user type: " + userType);
+            }
+        } catch (Exception e) {
+            System.err.println("Error calculating fee: " + e.getMessage());
+            return 0.0f; // Default to no fee in case of error
+        }
+    }
 }
