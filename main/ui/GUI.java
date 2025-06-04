@@ -1,15 +1,16 @@
 package main.ui;
 
-import main.core.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import main.core.DataBaseManager;
+import main.core.ResourceManager;
+import main.core.SecurityManager;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.prefs.Preferences;
-
-import main.core.SecurityManager;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
 
 /**
  * Main graphical user interface for the library management system.
@@ -41,10 +42,10 @@ public class GUI extends JFrame {
         setTitle(ResourceManager.getString("app.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
-        
+
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
-        
+
         createLoginPanel();
 
         createMainPanel();
@@ -107,10 +108,11 @@ public class GUI extends JFrame {
             JsonObject user = dbm.findUser(id, password);
 
             if (id.isEmpty() || password.isEmpty()) {
-                
+
                 GuiHelper.showErrorDialog(loginPanel,
                         ResourceManager.getString("login.error.empty"),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
                 return;
             }
 
@@ -123,7 +125,7 @@ public class GUI extends JFrame {
                     if (decryptedPassword.equals(password)) {
                         // Password acts as encryption key for other user data
                         key = password;
-                        
+
                         String encryptedID = user.get("UserID").getAsString();
                         currentUser = SecurityManager.decrypt(encryptedID, password);
 
@@ -134,18 +136,21 @@ public class GUI extends JFrame {
                     } else {
                         GuiHelper.showErrorDialog(loginPanel,
                                 ResourceManager.getString("login.error.invalid.password"),
-                                ResourceManager.getString("error"));
+                                ResourceManager.getString("error")
+                        );
                     }
                 } catch (RuntimeException ex) {
                     // Decryption failure treated as authentication failure
                     GuiHelper.showErrorDialog(loginPanel,
                             ResourceManager.getString("login.error.invalid.password"),
-                            ResourceManager.getString("error"));
+                            ResourceManager.getString("error")
+                    );
                 }
             } else {
                 GuiHelper.showErrorDialog(loginPanel,
                         ResourceManager.getString("login.error.invalid"),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             }
         });
     }
@@ -184,25 +189,25 @@ public class GUI extends JFrame {
      */
     private void showOptionsMenu(JComponent component) {
         JPopupMenu optionsMenu = new JPopupMenu();
-        
+
         JMenu languageMenu = new JMenu(ResourceManager.getString("menu.language"));
-        
+
         JMenuItem englishItem = new JMenuItem(ResourceManager.getString("menu.language.english"));
         englishItem.addActionListener(_ -> changeLanguage("en"));
-        
+
         JMenuItem portugueseItem = new JMenuItem(ResourceManager.getString("menu.language.portuguese"));
         portugueseItem.addActionListener(_ -> changeLanguage("pt"));
-        
+
         languageMenu.add(englishItem);
         languageMenu.add(portugueseItem);
-        
+
         JMenuItem logoutItem = new JMenuItem(ResourceManager.getString("menu.logout"));
         logoutItem.addActionListener(_ -> logout());
-        
+
         optionsMenu.add(languageMenu);
         optionsMenu.addSeparator();
         optionsMenu.add(logoutItem);
-        
+
         optionsMenu.show(component, 0, component.getHeight());
     }
 
@@ -217,43 +222,47 @@ public class GUI extends JFrame {
             if (languageCode == null || (!languageCode.equals("en") && !languageCode.equals("pt"))) {
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.language.invalid"),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
                 return;
             }
-        
-        try {
-            prefs.put("language", languageCode);
-        } catch (Exception e) {
-            System.err.println("Error saving language preference: " + e.getMessage());
-        }
 
-        try {
-            ResourceManager.setLocale(languageCode);
+            try {
+                prefs.put("language", languageCode);
+            } catch (Exception e) {
+                System.err.println("Error saving language preference: " + e.getMessage());
+            }
+
+            try {
+                ResourceManager.setLocale(languageCode);
+            } catch (Exception e) {
+                GuiHelper.showErrorDialog(this,
+                        ResourceManager.getString("error.language.resource") + ": " + e.getMessage(),
+                        ResourceManager.getString("error")
+                );
+                return;
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    ResourceManager.getString("options.language.changed"),
+                    ResourceManager.getString("options.title"),
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            try {
+                updateUIText();
+            } catch (Exception e) {
+                GuiHelper.showErrorDialog(this,
+                        ResourceManager.getString("error.ui.update") + ": " + e.getMessage(),
+                        ResourceManager.getString("error")
+                );
+            }
         } catch (Exception e) {
             GuiHelper.showErrorDialog(this,
-                    ResourceManager.getString("error.language.resource") + ": " + e.getMessage(),
-                    ResourceManager.getString("error"));
-            return;
+                    ResourceManager.getString("error.language.general") + ": " + e.getMessage(),
+                    ResourceManager.getString("error")
+            );
         }
-
-        JOptionPane.showMessageDialog(this,
-                ResourceManager.getString("options.language.changed"),
-                ResourceManager.getString("options.title"),
-                JOptionPane.INFORMATION_MESSAGE);
-
-        try {
-            updateUIText();
-        } catch (Exception e) {
-            GuiHelper.showErrorDialog(this,
-                    ResourceManager.getString("error.ui.update") + ": " + e.getMessage(),
-                    ResourceManager.getString("error"));
-        }
-    } catch (Exception e) {
-        GuiHelper.showErrorDialog(this,
-                ResourceManager.getString("error.language.general") + ": " + e.getMessage(),
-                ResourceManager.getString("error"));
     }
-}
 
     /**
      * Updates all UI text elements when the language changes.
@@ -262,9 +271,9 @@ public class GUI extends JFrame {
     private void updateUIText() {
         try {
             setTitle(ResourceManager.getString("app.title"));
-            
+
             String currentCard = GuiHelper.getCurrentCardName(cardLayout);
-            
+
             try {
                 if ("login".equals(currentCard)) {
                     updateLoginPanel();
@@ -275,16 +284,18 @@ public class GUI extends JFrame {
                 System.err.println("Error updating UI panels: " + e.getMessage());
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.update") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             }
-            
+
             revalidate();
             repaint();
         } catch (Exception e) {
             System.err.println("Critical error updating UI: " + e.getMessage());
             GuiHelper.showErrorDialog(this,
                     ResourceManager.getString("error.ui.critical") + ": " + e.getMessage(),
-                    ResourceManager.getString("error"));
+                    ResourceManager.getString("error")
+            );
         }
     }
 
@@ -312,15 +323,15 @@ public class GUI extends JFrame {
             contentPane.remove(mainPanel);
             createMainPanel();
             cardPanel.add(mainPanel, "main");
-            
+
             if (currentUserName != null) {
                 welcomeLabel.setText(ResourceManager.getString("welcome.user", currentUserName));
             } else {
                 welcomeLabel.setText(ResourceManager.getString("welcome.message"));
             }
-            
+
             cardLayout.show(cardPanel, "main");
-            
+
             if (myBooksPanel != null && myBooksModel != null) {
                 try {
                     loadMyBooksToTable(myBooksModel);
@@ -387,6 +398,8 @@ public class GUI extends JFrame {
             loadBrowseBooksToTable(browseBooksTableModel, searchTerm);
         });
 
+        // TODO: ADD BORROW BUTTON TO EACH ROW
+
         return panel;
     }
 
@@ -394,17 +407,17 @@ public class GUI extends JFrame {
      * Loads book data into the browse books table based on a search term.
      * Includes error handling for database operations and data validation.
      *
-     * @param model The table model to populate
+     * @param model      The table model to populate
      * @param searchTerm The search term to filter books by
      */
     private void loadBrowseBooksToTable(DefaultTableModel model, String searchTerm) {
         // Clear existing table data before populating
         model.setRowCount(0);
-        
+
         try {
             DataBaseManager dbm = new DataBaseManager();
             JsonArray books = dbm.findBooks(searchTerm);
-        
+
             if (books == null) {
                 // Handle database query failure with informative message
                 model.addRow(new Object[]{
@@ -412,48 +425,49 @@ public class GUI extends JFrame {
                         ResourceManager.getString("error.search.failed"),
                         "-", "-", "-"
                 });
-                GuiHelper.showErrorDialog(this, 
-                        ResourceManager.getString("error.search.failed"), 
-                        ResourceManager.getString("error"));
+                GuiHelper.showErrorDialog(this,
+                        ResourceManager.getString("error.search.failed"),
+                        ResourceManager.getString("error")
+                );
                 return;
             }
-        
+
             if (books.isEmpty()) {
                 // Display different messages based on whether search was empty or no results found
                 model.addRow(new Object[]{
                         "-",
-                        searchTerm.isEmpty() ? 
-                            ResourceManager.getString("books.none.database") : 
-                            ResourceManager.getString("books.none.search"),
+                        searchTerm.isEmpty() ?
+                                ResourceManager.getString("books.none.database") :
+                                ResourceManager.getString("books.none.search"),
                         "-", "-", "-"
                 });
                 return;
             }
-        
+
             for (int i = 0; i < books.size(); i++) {
                 try {
                     JsonObject book = books.get(i).getAsJsonObject();
-                
+
                     // Skip books with missing required fields to prevent NullPointerException
                     if (!GuiHelper.hasRequiredBookFields(book)) {
                         continue; // Skip invalid book entries
                     }
-                
+
                     String bookID = book.get("BookID").getAsString();
                     int shelfNumber = dbm.getShelfNumber(bookID);
-                
+
                     if (shelfNumber == -1) {
                         shelfNumber = 0; // Default shelf value when not found
                     }
-                
+
                     model.addRow(new Object[]{
                             shelfNumber,
                             book.get("Title").getAsString(),
                             book.get("Author").getAsString(),
                             book.get("Publisher").getAsString(),
                             // Convert numeric availability to localized Yes/No string
-                            book.get("Available").getAsInt() > 0 ? 
-                                    ResourceManager.getString("yes") : 
+                            book.get("Available").getAsInt() > 0 ?
+                                    ResourceManager.getString("yes") :
                                     ResourceManager.getString("no")
                     });
                 } catch (Exception e) {
@@ -468,13 +482,12 @@ public class GUI extends JFrame {
                     ResourceManager.getString("error.database"),
                     "-", "-", "-"
             });
-            GuiHelper.showErrorDialog(this, 
-                    ResourceManager.getString("error.database") + ": " + e.getMessage(), 
-                    ResourceManager.getString("error"));
+            GuiHelper.showErrorDialog(this,
+                    ResourceManager.getString("error.database") + ": " + e.getMessage(),
+                    ResourceManager.getString("error")
+            );
         }
     }
-
-
 
 
     /**
@@ -511,86 +524,94 @@ public class GUI extends JFrame {
 
         returnButton.addActionListener(_ -> {
             try {
-                if (GuiHelper.isRowSelected(tableComponents.table(), panel, 
+                if (GuiHelper.isRowSelected(tableComponents.table(), panel,
                         ResourceManager.getString("button.return.noselection"))) {
                     int selectedRow = tableComponents.table().getSelectedRow();
-                    
+
                     if (selectedRow < 0 || selectedRow >= myBooksTableModel.getRowCount()) {
                         GuiHelper.showErrorDialog(panel,
                                 ResourceManager.getString("error.invalid.selection"),
-                                ResourceManager.getString("error"));
+                                ResourceManager.getString("error")
+                        );
                         return;
                     }
-                    
+
                     String bookTitle = myBooksTableModel.getValueAt(selectedRow, 0).toString();
                     String dateIssued = myBooksTableModel.getValueAt(selectedRow, 1).toString();
                     String dateDue = myBooksTableModel.getValueAt(selectedRow, 2).toString();
                     String status = myBooksTableModel.getValueAt(selectedRow, 3).toString();
-                    
+
                     // Check if this is a placeholder "No books" row
                     if (bookTitle.equals(ResourceManager.getString("books.none"))) {
                         GuiHelper.showErrorDialog(panel,
                                 ResourceManager.getString("error.no.books"),
-                                ResourceManager.getString("error"));
+                                ResourceManager.getString("error")
+                        );
                         return;
                     }
-                    
+
                     int confirm = JOptionPane.showConfirmDialog(panel,
                             ResourceManager.getString("confirm.return") + " " + bookTitle + "?",
                             ResourceManager.getString("confirm"),
                             JOptionPane.YES_NO_OPTION);
-                            
+
                     if (confirm == JOptionPane.YES_OPTION) {
                         try {
                             boolean success = false;
 
-                            // TODO: Implement actual book return logic
-
                             if (status.equals(ResourceManager.getString("status.overdue"))) {
-                                int daysOverdue = dbm.getDaysOverdue(dateIssued, dateDue);
+                                int daysOverdue = dbm.getDaysOverdue(dateDue);
 
                                 if (daysOverdue > 0) {
-                                    // If book is overdue, apply late fee logic
-
                                     double lateFee = GuiHelper.calculateFee(daysOverdue, dbm.getUserType(currentUser, key));
+
                                     int response = JOptionPane.showConfirmDialog(panel,
                                             ResourceManager.getString("confirm.return.overdue", lateFee),
                                             ResourceManager.getString("confirm"),
                                             JOptionPane.YES_NO_OPTION);
 
                                     if (response == JOptionPane.YES_OPTION) {
-                                        // TODO: Decide if gona impliment a payment system that emulates how it would be in the real world or just a button that says "Pay Fine"
+                                        //! IF THERE WAS A FULL PAYMENT SYSTEM, THIS IS WHERE IT WOULD BE HANDLED
+                                        //! BUT CONSIDERING ITS NOT REQUIRED, WE JUST RETURN THE BOOK
+                                        String bookID = dbm.findBookID(bookTitle);
+                                        if (bookID != null) {
+                                            success = dbm.returnBook(currentUser, bookID, key);
+                                        }
                                     }
-                                } else {
-                                    // If book is on time, return normally
-                                    //success = dbm.returnBook(currentUser, bookTitle, key);
+                                }
+                            } else {
+                                String bookID = dbm.findBookID(bookTitle);
+                                if (bookID != null) {
+                                    success = dbm.returnBook(currentUser, bookID, key);
                                 }
                             }
 
-                            
                             if (success) {
                                 JOptionPane.showMessageDialog(panel,
                                         ResourceManager.getString("book.return.success"),
                                         ResourceManager.getString("success"),
                                         JOptionPane.INFORMATION_MESSAGE);
-                                        
+
                                 loadMyBooksToTable(myBooksModel);
                             } else {
                                 GuiHelper.showErrorDialog(panel,
                                         ResourceManager.getString("error.return.failed"),
-                                        ResourceManager.getString("error"));
+                                        ResourceManager.getString("error")
+                                );
                             }
                         } catch (Exception e) {
                             GuiHelper.showErrorDialog(panel,
                                     ResourceManager.getString("error.return.exception") + ": " + e.getMessage(),
-                                    ResourceManager.getString("error"));
+                                    ResourceManager.getString("error")
+                            );
                         }
                     }
                 }
             } catch (Exception e) {
                 GuiHelper.showErrorDialog(panel,
                         ResourceManager.getString("error.unexpected") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             }
         });
 
@@ -615,13 +636,14 @@ public class GUI extends JFrame {
                 });
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.session.details"),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
                 return;
             }
 
             DataBaseManager dbm = new DataBaseManager();
-            JsonArray books = null;
-        
+            JsonArray books;
+
             try {
                 books = dbm.findBorrowedBooks(currentUser, key);
             } catch (Exception e) {
@@ -631,10 +653,11 @@ public class GUI extends JFrame {
                 });
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.load.books.details") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
                 return;
             }
-    
+
             if (books == null) {
                 model.addRow(new Object[]{
                         ResourceManager.getString("error.database"),
@@ -642,7 +665,7 @@ public class GUI extends JFrame {
                 });
                 return;
             }
-    
+
             if (books.isEmpty()) {
                 model.addRow(new Object[]{
                         ResourceManager.getString("books.none"),
@@ -650,26 +673,27 @@ public class GUI extends JFrame {
                 });
                 return;
             }
-    
+
             int loadErrors = 0;
+
             for (int i = 0; i < books.size(); i++) {
                 try {
                     JsonObject book = books.get(i).getAsJsonObject();
-                    
+
                     // Validate required fields before processing
                     if (!book.has("BookID") || !book.has("DateIssued") || !book.has("Status")) {
                         loadErrors++;
                         continue;
                     }
-                    
+
                     String bookId = book.get("BookID").getAsString();
                     String title = dbm.getBookTitle(bookId);
-                    
+
                     // Use placeholder for books that may have been deleted from database
                     if (title == null) {
                         title = ResourceManager.getString("book.unknown") + " (" + bookId + ")";
                     }
-    
+
                     String dateIssued;
                     try {
                         // DateIssued is stored encrypted and needs decryption
@@ -678,8 +702,8 @@ public class GUI extends JFrame {
                         dateIssued = ResourceManager.getString("date.unknown");
                         loadErrors++;
                     }
-    
-                    String userType = null;
+
+                    String userType;
                     try {
                         userType = dbm.getUserType(currentUser, key);
                         if (userType == null) {
@@ -694,20 +718,20 @@ public class GUI extends JFrame {
                         });
                         continue;
                     }
-                    
+
                     String dateDue = dbm.getDueDate(dateIssued, userType);
                     if (dateDue == null) {
                         dateDue = ResourceManager.getString("date.unknown");
                     }
-    
+
                     int statusActual;
                     int statusSaved;
-                    
+
                     try {
                         // Calculate and synchronize book status if it has changed
-                        statusActual = dbm.getDueStatus(dateIssued, dateDue);
+                        statusActual = dbm.getDueStatus(dateDue);
                         statusSaved = book.get("Status").getAsInt();
-                        
+
                         if (statusActual != statusSaved) {
                             try {
                                 dbm.updateDueStatus(currentUser, bookId, statusActual, key);
@@ -718,9 +742,9 @@ public class GUI extends JFrame {
                     } catch (Exception e) {
                         statusActual = -2;  // Error status code
                     }
-    
+
                     String statusMsg = GuiHelper.getStatusMessage(statusActual);
-    
+
                     model.addRow(new Object[]{
                             title,
                             dateIssued,
@@ -732,12 +756,13 @@ public class GUI extends JFrame {
                     System.err.println("Error loading book: " + e.getMessage());
                 }
             }
-            
+
             // Tracking errors lets us notify user about partial data issues
             if (loadErrors > 0) {
                 GuiHelper.showErrorDialog(this,
                         String.format(ResourceManager.getString("error.load.some.books"), loadErrors),
-                        ResourceManager.getString("warning"));
+                        ResourceManager.getString("warning")
+                );
             }
         } catch (Exception e) {
             model.setRowCount(0);
@@ -747,7 +772,8 @@ public class GUI extends JFrame {
             });
             GuiHelper.showErrorDialog(this,
                     ResourceManager.getString("error.unexpected.details") + ": " + e.getMessage(),
-                    ResourceManager.getString("error"));
+                    ResourceManager.getString("error")
+            );
         }
     }
 
@@ -796,7 +822,8 @@ public class GUI extends JFrame {
                 System.err.println("Error loading user's books: " + e.getMessage());
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.load.books") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             }
 
             try {
@@ -820,12 +847,14 @@ public class GUI extends JFrame {
                 System.err.println("Error accessing tabbed pane: " + e.getMessage());
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.component") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             } catch (ClassCastException e) {
                 System.err.println("Error with UI component type: " + e.getMessage());
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.component") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             } catch (Exception e) {
                 System.err.println("Error updating admin tab: " + e.getMessage());
             }
@@ -837,13 +866,15 @@ public class GUI extends JFrame {
                 System.err.println("Error switching to main panel: " + e.getMessage());
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.navigation") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             }
         } catch (Exception e) {
             System.err.println("Critical error in switchToMainPanel: " + e.getMessage());
             GuiHelper.showErrorDialog(this,
                     ResourceManager.getString("error.login.failed") + ": " + e.getMessage(),
-                    ResourceManager.getString("error"));
+                    ResourceManager.getString("error")
+            );
 
             try {
                 // Fallback to login screen on critical error
@@ -851,7 +882,8 @@ public class GUI extends JFrame {
             } catch (Exception ex) {
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.critical") + ": " + e.getMessage(),
-                        ResourceManager.getString("error"));
+                        ResourceManager.getString("error")
+                );
             }
         }
     }

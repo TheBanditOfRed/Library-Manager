@@ -208,62 +208,37 @@ public class DataBaseManager {
     /**
      * Determines the status of a book based on issue date and due date.
      *
-     * @param issueDate The date the book was issued (in format "YYYY-MM-DD")
      * @param dueDate The date the book is due (in format "YYYY-MM-DD")
      * @return Status code: 1 for on time, 0 for due today, -1 for overdue
      */
-    public int getDueStatus(String issueDate, String dueDate) {
-        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
-        Matcher matcher = pattern.matcher(issueDate);
+    public int getDueStatus(String dueDate) {
+        LocalDate dueDateObj = LocalDate.parse(dueDate);
+        LocalDate today = LocalDate.now();
 
-        if (matcher.find()){
-            String foundDate = matcher.group();
-            String[] dateParts = foundDate.split("-");
-            int year = Integer.parseInt(dateParts[0]);
-            int month = Integer.parseInt(dateParts[1]);
-            int day = Integer.parseInt(dateParts[2]);
-
-            LocalDate issueDateObj = LocalDate.of(year, month, day);
-            LocalDate dueDateObj = LocalDate.parse(dueDate);
-
-            if (issueDateObj.isAfter(dueDateObj)) {
-                return -1; // Book is overdue
-            } else if (issueDateObj.isEqual(dueDateObj)) {
-                return 0; // Book is due today
-            } else {
-                return 1; // Book is not overdue
-            }
+        if (today.isAfter(dueDateObj)) {
+            return -1; // Book is overdue
+        } else if (today.isEqual(dueDateObj)) {
+            return 0; // Book is due today
+        } else {
+            return 1; // Book is not overdue
         }
-        return -1;
     }
 
     /**
      * Calculates the number of days a book is overdue based on issue date and due date.
      *
-     * @param issueDate The date the book was issued (in format "YYYY-MM-DD")
      * @param dueDate The date the book is due (in format "YYYY-MM-DD")
      * @return Number of days overdue, or 0 if not overdue
      */
-    public int getDaysOverdue(String issueDate, String dueDate) {
-        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
-        Matcher matcher = pattern.matcher(issueDate);
+    public int getDaysOverdue(String dueDate) {
+        LocalDate dueDateObj = LocalDate.parse(dueDate);
+        LocalDate today = LocalDate.now();
 
-        if (matcher.find()){
-            String foundDate = matcher.group();
-            String[] dateParts = foundDate.split("-");
-            int year = Integer.parseInt(dateParts[0]);
-            int month = Integer.parseInt(dateParts[1]);
-            int day = Integer.parseInt(dateParts[2]);
-
-            LocalDate issueDateObj = LocalDate.of(year, month, day);
-            LocalDate dueDateObj = LocalDate.parse(dueDate);
-            LocalDate today = LocalDate.now();
-
-            if (issueDateObj.isAfter(dueDateObj)) {
-                return (int) java.time.temporal.ChronoUnit.DAYS.between(dueDateObj, today);
-            }
+        if (today.isAfter(dueDateObj)) {
+            return (int) java.time.temporal.ChronoUnit.DAYS.between(dueDateObj, today);
+        } else {
+            return 0; // Should never be called but just in case...
         }
-        return 0; // Not overdue
     }
 
     /**
@@ -329,16 +304,23 @@ public class DataBaseManager {
      * @return A unique book ID or null if the shelf number is invalid
      */
     public String generateBookID(String shelfNumber, String bookTitle) {
-        String shelfCode = generateShelfCode(Integer.parseInt(shelfNumber));
+        try {
+            int shelfNum = Integer.parseInt(shelfNumber);
+            String shelfCode = generateShelfCode(shelfNum);
 
-        if (shelfCode.isEmpty()) {
+            if (shelfCode.isEmpty()) {
+                return null;
+            }
+
+            int hash = Math.abs(bookTitle.hashCode());
+            int sixDigitHash = hash % 1000000;
+
+            return shelfCode + String.format("%06d", sixDigitHash);
+
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid shelf number: " + e.getMessage());
             return null;
         }
-
-        int hash = Math.abs(bookTitle.hashCode());
-        int sixDigitHash = hash % 1000000;
-
-        return shelfCode + String.format("%06d", sixDigitHash);
     }
 
     /**
@@ -364,4 +346,49 @@ public class DataBaseManager {
         }
     }
 
+    /**
+     * Returns a book for a specific user and updates both user and book databases.
+     * 
+     * @param userId The ID of the user returning the book
+     * @param bookId The ID of the book being returned
+     * @param password The password for decryption
+     * @return true if the book was successfully returned, false otherwise
+     */
+    public boolean returnBook(String userId, String bookId, String password) {
+        try {
+            if (!JsonManager.removeUserBook(userId, bookId, password, USER_DATABASE_PATH)) {
+                System.err.println("Failed to remove book from user's borrowed list");
+                return false;
+            }
+
+            if (!JsonManager.updateBookReturn(bookId, BOOK_DATABASE_PATH)) {
+                System.err.println("Warning: Failed to update book availability. Book removed from user but availability not updated.");
+            }
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("Failed to return book: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Finds the book ID based on the book title.
+     *
+     * @param bookTitle The title of the book to search for
+     * @return The book ID if found, null otherwise
+     */
+    public String findBookID(String bookTitle) {
+        JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
+        if (bookData != null) {
+            for (int i = 0; i < bookData.size(); i++) {
+                JsonObject book = bookData.get(i).getAsJsonObject();
+                if (book.get("Title").getAsString().equalsIgnoreCase(bookTitle)) {
+                    return book.get("BookID").getAsString();
+                }
+            }
+        }
+        return null;
+    }
 }

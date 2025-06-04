@@ -8,7 +8,7 @@
         {
           "BookID": "B901411",
           "DateIssued": "Iw2j8Tdr90oS3nmod03ESQDmOZVkiVByMPV6a/OeHza4metwfbxsvMXxLeVSlR4tnXWp6N5R",
-          "Status": 1
+          "Status": -1
         }
       ]
     }
@@ -22,7 +22,7 @@
         {
           "BookID": "B901411",
           "DateIssued": "4Z2uYBkwh90WKumVnE41gHUtUzPY60ZHaxDuom0O2SJsjptDIfsd/tSxFT2QVc8cGDYSjcj4",
-          "Status": 1
+          "Status": -1
         }
       ]
     }

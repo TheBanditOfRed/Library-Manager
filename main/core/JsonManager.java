@@ -104,7 +104,7 @@ public class JsonManager {
 
             boolean updated = false;
             for (String userType : new String[]{"Students", "General Public", "Admins"}) {
-                if (userData.has(userType)) continue;
+                if (!userData.has(userType)) continue;
 
                 JsonArray users = userData.getAsJsonArray(userType);
                 for (int i = 0; i < users.size(); i++) {
@@ -148,6 +148,105 @@ public class JsonManager {
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error updating due status for user: " + currentUser, e);
+        }
+    }
+
+    /**
+     * Updates book availability counts when a book is returned.
+     * 
+     * @param bookId The ID of the book being returned
+     * @param bookDatabasePath Path to the book database file
+     * @return true if successful, false otherwise
+     */
+    public static boolean updateBookReturn(String bookId, String bookDatabasePath) {
+        try {
+            JsonArray bookData = readJsonArrayFile(bookDatabasePath);
+            if (bookData == null) {
+                logger.log(Level.SEVERE, "Book data is null. Cannot update availability.");
+                return false;
+            }
+            
+            for (int i = 0; i < bookData.size(); i++) {
+                JsonObject book = bookData.get(i).getAsJsonObject();
+                if (book.get("BookID").getAsString().equals(bookId)) {
+                    int available = book.get("Available").getAsInt();
+                    int onLoan = book.get("OnLoan").getAsInt();
+                    
+                    book.addProperty("Available", available + 1);
+                    book.addProperty("OnLoan", Math.max(0, onLoan - 1));
+                    
+                    boolean success = saveJsonArrayFile(bookData, bookDatabasePath);
+                    if (success) {
+                        logger.log(Level.INFO, "Successfully updated book availability for: " + bookId);
+                    } else {
+                        logger.log(Level.SEVERE, "Failed to save book data after availability update");
+                    }
+                    return success;
+                }
+            }
+            
+            logger.log(Level.WARNING, "Book not found: " + bookId);
+            return false;
+            
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error updating book availability for: " + bookId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Removes a book from a user's borrowed books list.
+     * 
+     * @param userId The ID of the user
+     * @param bookId The ID of the book to remove
+     * @param password The encryption password
+     * @param userDatabasePath Path to the user database file
+     * @return true if successful, false otherwise
+     */
+    public static boolean removeUserBook(String userId, String bookId, String password, String userDatabasePath) {
+        try {
+            JsonObject userData = readJsonFile(userDatabasePath);
+            if (userData == null) {
+                logger.log(Level.SEVERE, "User data is null. Cannot remove book.");
+                return false;
+            }
+
+            for (String userType : new String[]{"Students", "General Public", "Admins"}) {
+                JsonArray users = userData.getAsJsonArray(userType);
+                for (int i = 0; i < users.size(); i++) {
+                    JsonObject user = users.get(i).getAsJsonObject();
+                    String encryptedId = user.get("UserID").getAsString();
+
+                    try {
+                        String decryptedId = main.core.SecurityManager.decrypt(encryptedId, password);
+                        if (decryptedId.equals(userId)) {
+                            if (user.has("Books") && !user.get("Books").isJsonNull()) {
+                                JsonArray books = user.getAsJsonArray("Books");
+                                for (int j = 0; j < books.size(); j++) {
+                                    JsonObject book = books.get(j).getAsJsonObject();
+                                    if (book.get("BookID").getAsString().equals(bookId)) {
+                                        books.remove(j);
+                                        boolean success = saveJsonFile(userData, userDatabasePath);
+                                        if (success) {
+                                            logger.log(Level.INFO, "Successfully removed book " + bookId + " from user " + userId);
+                                        }
+                                        return success;
+                                    }
+                                }
+                            }
+                            return false; // User found but book not found
+                        }
+                    } catch (Exception _) {
+                        continue; // Wrong password, try next user
+                    }
+                }
+            }
+        
+            return false; // User not found
+        
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error removing book from user: " + userId, e);
+            return false;
         }
     }
 }

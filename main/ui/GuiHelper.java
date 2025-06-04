@@ -39,7 +39,7 @@ public class GuiHelper {
      * @param title The title of the error dialog
      * @param message The error message to display
      */
-    public static void showErrorDialog(Component parentComponent,String message, String title) {
+    public static void showErrorDialog(Component parentComponent, String message, String title) {
         JOptionPane.showMessageDialog(parentComponent,
                 message,
                 title,
@@ -103,17 +103,14 @@ public class GuiHelper {
      * @param userType The type of user (e.g., "Students", "General Public", "Admins")
      * @return The calculated fee, or 0.0 if an error occurs
      */
-    public static double calculateFee(int daysOverdue, String userType) {
+    public static float calculateFee(int daysOverdue, String userType) {
         try {
-            if (userType.equals("Students")) {
-                return daysOverdue * 0.5f;
-            } else if (userType.equals("General Public")) {
-                return daysOverdue * 1.0f;
-            } else if (userType.equals("Admins")) {
-                return 0.0f;
-            } else {
-                throw new IllegalArgumentException("Unknown user type: " + userType);
-            }
+            return switch (userType) {
+                case "Students" -> daysOverdue * 0.5f;
+                case "General Public" -> daysOverdue * 1.0f;
+                case "Admins" -> 0.0f;
+                default -> throw new IllegalArgumentException("Unknown user type: " + userType);
+            };
         } catch (Exception e) {
             System.err.println("Error calculating fee: " + e.getMessage());
             return 0.0f; // Default to no fee in case of error
