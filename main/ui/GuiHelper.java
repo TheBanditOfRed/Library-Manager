@@ -5,11 +5,15 @@ import main.core.ResourceManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class for GUI-related helper methods.
  */
 public class GuiHelper {
+
+    private static final Logger logger = Logger.getLogger(GuiHelper.class.getName());
 
     /**
      * Checks if a row is selected in the given JTable.
@@ -40,10 +44,8 @@ public class GuiHelper {
      * @param message The error message to display
      */
     public static void showErrorDialog(Component parentComponent, String message, String title) {
-        JOptionPane.showMessageDialog(parentComponent,
-                message,
-                title,
-                JOptionPane.ERROR_MESSAGE);
+        logger.info("Displaying error dialog to user: " + title + " - " + message);
+        JOptionPane.showMessageDialog(parentComponent, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -76,7 +78,7 @@ public class GuiHelper {
             }
             return "unknown";
         } catch (Exception e) {
-            System.err.println("Error determining current card: " + e.getMessage());
+            logger.log(Level.WARNING, "Error determining current card layout", e);
             return "unknown";
         }
     }
@@ -88,12 +90,21 @@ public class GuiHelper {
      * @return true if all required fields are present, false otherwise
      */
     public static boolean hasRequiredBookFields(JsonObject book) {
-        return book != null &&
-                book.has("BookID") &&
-                book.has("Title") &&
-                book.has("Author") &&
-                book.has("Publisher") &&
-                book.has("Available");
+        if (book == null) {
+            logger.warning("Book validation failed: null book object");
+            return false;
+        }
+        
+        String[] requiredFields = {"BookID", "Title", "Author", "Publisher", "Available"};
+        for (String field : requiredFields) {
+            if (!book.has(field)) {
+                logger.warning("Book validation failed: missing field '" + field + "'");
+                return false;
+            }
+        }
+        
+        logger.fine("Book validation passed for book: " + book.get("BookID").getAsString());
+        return true;
     }
 
     /**
@@ -112,7 +123,7 @@ public class GuiHelper {
                 default -> throw new IllegalArgumentException("Unknown user type: " + userType);
             };
         } catch (Exception e) {
-            System.err.println("Error calculating fee: " + e.getMessage());
+            logger.log(Level.WARNING, "Error calculating fee for user type: " + userType + ", days overdue: " + daysOverdue, e);
             return 0.0f; // Default to no fee in case of error
         }
     }

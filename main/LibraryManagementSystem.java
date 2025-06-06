@@ -1,5 +1,6 @@
 package main;
 
+import main.core.LoggingManager;
 import main.ui.GUI;
 import main.core.ResourceManager;
 
@@ -13,7 +14,7 @@ import java.util.logging.Logger;
  * error handling, and startup of the library management system.
  */
 public class LibraryManagementSystem {
-    private static final Logger LOGGER = Logger.getLogger(LibraryManagementSystem.class.getName());
+    private static final Logger logger = Logger.getLogger(LibraryManagementSystem.class.getName());
 
     /**
      * Main method to launch the library management system.
@@ -22,33 +23,67 @@ public class LibraryManagementSystem {
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-        try{
+        LoggingManager.initializeLogging();
+
+        logger.info("=== Library Management System Starting ===");
+        logger.info("Java Version: " + System.getProperty("java.version"));
+        logger.info("Operating System: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+        logger.info("User Directory: " + System.getProperty("user.dir"));
+        logger.info("Log Directory: " + LoggingManager.getLogDirectory());
+        
+        try {
+            logger.info("Setting system look and feel...");
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            logger.info("System look and feel set successfully");
 
-            intializeApplication();
-
+            logger.info("Initializing application settings...");
+            initializeApplication();
+            logger.info("Application settings initialized successfully");
+            
+            logger.info("Starting GUI on Event Dispatch Thread...");
             SwingUtilities.invokeLater(() -> {
-                try{
+                try {
+                    logger.info("Creating GUI instance...");
                     GUI gui = new GUI();
                     gui.setVisible(true);
-                } catch (Exception e){
+                    logger.info("=== GUI successfully initialized and displayed ===");
+                    logger.info("Application startup completed - Ready for user interaction");
+                } catch (Exception e) {
                     handleGUIException(e);
                 }
             });
+            
         } catch (Exception e) {
             handleStartupException(e);
         }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("=== Library Management System Shutting Down ===");
+            logger.info("Performing cleanup operations...");
+            LoggingManager.flushLogs();
+            logger.info("Shutdown completed");
+        }));
     }
 
     /**
-     * Initializes application settings and settings.
+     * Initializes application settings and locale configuration.
+     * Loads saved language preferences and sets up ResourceManager.
      */
-    private static void intializeApplication() {
-        Preferences prefs = Preferences.userNodeForPackage(GUI.class);
-        String savedLanguage = prefs.get("language", "en");
-        ResourceManager.setLocale(savedLanguage);
+    private static void initializeApplication() {
+        try {
+            Preferences prefs = Preferences.userNodeForPackage(GUI.class);
+            String savedLanguage = prefs.get("language", "en");
+            
+            logger.info("Loading saved language preference: " + savedLanguage);
 
-        LOGGER.info("Application initialized with language: " + savedLanguage);
+            ResourceManager.setLocale(savedLanguage);
+            
+            logger.info("Application initialized successfully with language: " + savedLanguage);
+            
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to load language preferences, using default", e);
+            ResourceManager.setLocale("en");
+        }
     }
 
     /**
@@ -58,11 +93,26 @@ public class LibraryManagementSystem {
      * @param e The exception that occurred
      */
     private static void handleGUIException(Exception e) {
-        LOGGER.log(Level.SEVERE, "Error initializing GUI", e);
+        logger.log(Level.SEVERE, "Critical error during GUI initialization", e);
+
+        String errorMessage;
+        try {
+            errorMessage = ResourceManager.getString("gui.error.initialization") + "\n" + 
+                          e.getMessage() + "\n\n" + 
+                          ResourceManager.getString("gui.error.exit");
+        } catch (Exception resourceError) {
+            errorMessage = "Failed to initialize GUI: " + e.getMessage() + 
+                          "\n\nThe application will now exit.";
+            logger.log(Level.SEVERE, "ResourceManager also failed during error handling", resourceError);
+        }
+        
         JOptionPane.showMessageDialog(null,
-                ResourceManager.getString("gui.error.initialization") + "\n" + e.getMessage() + "\n\n" + ResourceManager.getString("gui.error.exit"),
-                ResourceManager.getString("error"),
+                errorMessage,
+                "Critical Error",
                 JOptionPane.ERROR_MESSAGE);
+        
+        logger.severe("Application terminating due to GUI initialization failure");
+        LoggingManager.flushLogs(); // Ensure logs are written before exit
         System.exit(1);
     }
 
@@ -73,12 +123,26 @@ public class LibraryManagementSystem {
      * @param e The exception that occurred
      */
     private static void handleStartupException(Exception e) {
-        LOGGER.log(Level.SEVERE, "Error during application startup", e);
+        logger.log(Level.SEVERE, "Critical error during application startup", e);
+
+        String errorMessage;
+        try {
+            errorMessage = ResourceManager.getString("startup.error") + "\n" + 
+                          e.getMessage() + "\n\n" + 
+                          ResourceManager.getString("gui.error.exit");
+        } catch (Exception resourceError) {
+            errorMessage = "Failed to start application: " + e.getMessage() + 
+                          "\n\nThe application will now exit.";
+            logger.log(Level.SEVERE, "ResourceManager also failed during startup error handling", resourceError);
+        }
+        
         JOptionPane.showMessageDialog(null,
-                ResourceManager.getString("startup.error") + "\n" + e.getMessage() + "\n\n" + ResourceManager.getString("gui.error.exit"),
-                ResourceManager.getString("error"),
+                errorMessage,
+                "Startup Error",
                 JOptionPane.ERROR_MESSAGE);
+        
+        logger.severe("Application terminating due to startup failure");
+        LoggingManager.flushLogs(); // Ensure logs are written before exit
         System.exit(1);
     }
 }
-

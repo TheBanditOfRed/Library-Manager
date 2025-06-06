@@ -3,6 +3,8 @@ package main.core;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages internationalization resources for the library management system.
@@ -10,16 +12,17 @@ import java.util.ResourceBundle;
  * Supports language switching at runtime and parameterized message formatting.
  */
 public class ResourceManager {
+    private static final Logger logger = Logger.getLogger(ResourceManager.class.getName());
     private static ResourceBundle resourceBundle;
     private static Locale currentLocale;
 
     static {
         try {
             setLocale(Locale.getDefault());
-            System.out.println("Locale set to: " + currentLocale);
+            logger.info("Locale set to: " + currentLocale);
         } catch (Exception e) {
             setLocale(Locale.ENGLISH);
-            System.out.println("Error setting locale, defaulting to English: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to set default locale, using English", e);
         }
     }
 
@@ -43,15 +46,21 @@ public class ResourceManager {
      * @param languageTag A string representing the language to use
      */
     public static void setLocale(String languageTag) {
-        if (languageTag.length() == 2) {
-            setLocale(Locale.forLanguageTag(languageTag));
+        logger.info("Changing application locale to: " + languageTag);
+        try {
+            if (languageTag.length() == 2) {
+                setLocale(Locale.forLanguageTag(languageTag));
 
-        } else if (languageTag.contains("_")) {
-            String bcp47Tag = languageTag.replace('_', '-');
-            setLocale(Locale.forLanguageTag(bcp47Tag));
+            } else if (languageTag.contains("_")) {
+                String bcp47Tag = languageTag.replace('_', '-');
+                setLocale(Locale.forLanguageTag(bcp47Tag));
 
-        } else {
-            setLocale(Locale.forLanguageTag(languageTag));
+            } else {
+                setLocale(Locale.forLanguageTag(languageTag));
+            }
+            logger.info("Successfully changed locale to: " + languageTag);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to change locale to: " + languageTag, e);
         }
     }
 
@@ -66,6 +75,7 @@ public class ResourceManager {
         try {
             return resourceBundle.getString(key);
         } catch (Exception e) {
+            logger.warning("Missing resource key: " + key + " for locale: " + currentLocale);
             return "Missing translation for key: " + key;
         }
     }
@@ -82,11 +92,8 @@ public class ResourceManager {
         try {
             return MessageFormat.format(resourceBundle.getString(key), params);
         } catch (Exception e) {
+            logger.warning("Missing resource key: " + key + " for locale: " + currentLocale);
             return "Missing translation for key: " + key;
         }
-    }
-
-    public static Locale getCurrentLocale() {
-        return currentLocale;
     }
 }

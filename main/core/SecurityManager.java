@@ -10,12 +10,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages encryption and decryption operations for sensitive data in the library management system.
  * Uses AES-GCM encryption with PBKDF2 key derivation for secure data protection.
  */
 public class SecurityManager {
+    private static final Logger logger = Logger.getLogger(SecurityManager.class.getName());
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
     private static final int SALT_LENGTH = 16;
@@ -36,7 +39,8 @@ public class SecurityManager {
      * @return A Base64-encoded string containing the salt, IV, and encrypted data
      * @throws RuntimeException if encryption fails
      */
-    public static String encrypt(String plaintext, String password){
+    public static String encrypt(String plaintext, String password) {
+        logger.fine("Encryption operation initiated"); // Fine level to avoid password leaks
         try {
             byte[] salt = new byte[SALT_LENGTH];
             SecureRandom random = new SecureRandom();
@@ -59,9 +63,10 @@ public class SecurityManager {
             System.arraycopy(salt, 0, combined, 0, salt.length);
             System.arraycopy(iv, 0, combined, salt.length, iv.length);
             System.arraycopy(ciphertext, 0, combined, salt.length + iv.length, ciphertext.length);
+            logger.fine("Encryption operation completed successfully");
             return Base64.getEncoder().encodeToString(combined);
-
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Encryption operation failed", e);
             throw new RuntimeException("Error encrypting data", e);
         }
     }
@@ -79,7 +84,8 @@ public class SecurityManager {
      * @return The decrypted plaintext string
      * @throws RuntimeException if decryption fails (e.g., wrong password or tampered data)
      */
-    public static String decrypt(String ciphertext, String password){
+    public static String decrypt(String ciphertext, String password) {
+        logger.fine("Decryption operation initiated");
         try {
             byte[] decoded = Base64.getDecoder().decode(ciphertext);
 
@@ -100,8 +106,10 @@ public class SecurityManager {
             cipher.updateAAD(salt);
 
             byte[] decrypted = cipher.doFinal(encrypted);
+            logger.fine("Decryption operation completed successfully");
             return new String(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
+            logger.log(Level.WARNING, "Decryption operation failed - possibly wrong password", e);
             throw new RuntimeException("Error decrypting data", e);
         }
     }

@@ -1,18 +1,18 @@
 [
-    {
-        "BookID": "B901411",
-        "Title": "Introduction to Algorithms",
-        "Author": "Thomas H. Cormen",
-        "Publisher": "MIT Press",
-        "Available": 5,
-        "OnLoan": 2
-    },
-    {
-        "BookID": "A218177",
-        "Title": "Artificial Intelligence: A Modern Approach",
-        "Author": "Stuart Russell",
-        "Publisher": "MIT Press",
-        "Available": 0,
-        "OnLoan": 0
-    }
+  {
+    "BookID": "B901411",
+    "Title": "Introduction to Algorithms",
+    "Author": "Thomas H. Cormen",
+    "Publisher": "MIT Press",
+    "Available": 4,
+    "OnLoan": 3
+  },
+  {
+    "BookID": "A218177",
+    "Title": "Artificial Intelligence: A Modern Approach",
+    "Author": "Stuart Russell",
+    "Publisher": "MIT Press",
+    "Available": 0,
+    "OnLoan": 0
+  }
 ]

@@ -150,49 +150,70 @@ public class JsonManager {
             logger.log(Level.SEVERE, "Error updating due status for user: " + currentUser, e);
         }
     }
+    
+    public enum BookOperation {
+        BORROW,
+        RETURN
+    }
 
     /**
-     * Updates book availability counts when a book is returned.
-     * 
-     * @param bookId The ID of the book being returned
+     * Updates book availability counts when a book is borrowed or returned.
+     *
+     * @param bookId The ID of the book
      * @param bookDatabasePath Path to the book database file
+     * @param operation The type of operation (BORROW or RETURN)
      * @return true if successful, false otherwise
      */
-    public static boolean updateBookReturn(String bookId, String bookDatabasePath) {
+    public static boolean updateBookAvailability(String bookId, String bookDatabasePath, BookOperation operation) {
         try {
             JsonArray bookData = readJsonArrayFile(bookDatabasePath);
             if (bookData == null) {
                 logger.log(Level.SEVERE, "Book data is null. Cannot update availability.");
-                return false;
+                return true;
             }
-            
+
             for (int i = 0; i < bookData.size(); i++) {
                 JsonObject book = bookData.get(i).getAsJsonObject();
                 if (book.get("BookID").getAsString().equals(bookId)) {
                     int available = book.get("Available").getAsInt();
                     int onLoan = book.get("OnLoan").getAsInt();
-                    
-                    book.addProperty("Available", available + 1);
-                    book.addProperty("OnLoan", Math.max(0, onLoan - 1));
+
+                    switch (operation) {
+                        case BORROW:
+                            if (available <= 0) {
+                                logger.log(Level.WARNING, "Book not available for borrowing: " + bookId);
+                                return true;
+                            }
+                            book.addProperty("Available", available - 1);
+                            book.addProperty("OnLoan", onLoan + 1);
+                            break;
+
+                        case RETURN:
+                            book.addProperty("Available", available + 1);
+                            book.addProperty("OnLoan", Math.max(0, onLoan - 1));
+                            break;
+                    }
                     
                     boolean success = saveJsonArrayFile(bookData, bookDatabasePath);
+                    
                     if (success) {
-                        logger.log(Level.INFO, "Successfully updated book availability for: " + bookId);
+                        logger.log(Level.INFO, "Successfully updated book availability for " + operation + ": " + bookId);
                     } else {
                         logger.log(Level.SEVERE, "Failed to save book data after availability update");
                     }
-                    return success;
+                    return !success;
                 }
             }
-            
+
             logger.log(Level.WARNING, "Book not found: " + bookId);
-            return false;
-            
+            return true;
+
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error updating book availability for: " + bookId, e);
-            return false;
+            logger.log(Level.SEVERE, "Error updating book availability for " + operation + ": " + bookId, e);
+            return true;
         }
     }
+
 
     /**
      * Removes a book from a user's borrowed books list.
@@ -201,14 +222,15 @@ public class JsonManager {
      * @param bookId The ID of the book to remove
      * @param password The encryption password
      * @param userDatabasePath Path to the user database file
+     * @param operation The type of operation (BORROW or RETURN)
      * @return true if successful, false otherwise
      */
-    public static boolean removeUserBook(String userId, String bookId, String password, String userDatabasePath) {
+    public static boolean modifyUserBook(String userId, String bookId, String password, String userDatabasePath, BookOperation operation) {
         try {
             JsonObject userData = readJsonFile(userDatabasePath);
             if (userData == null) {
-                logger.log(Level.SEVERE, "User data is null. Cannot remove book.");
-                return false;
+                logger.log(Level.SEVERE, "User data is null. Cannot modify book.");
+                return true;
             }
 
             for (String userType : new String[]{"Students", "General Public", "Admins"}) {
@@ -220,33 +242,68 @@ public class JsonManager {
                     try {
                         String decryptedId = main.core.SecurityManager.decrypt(encryptedId, password);
                         if (decryptedId.equals(userId)) {
-                            if (user.has("Books") && !user.get("Books").isJsonNull()) {
-                                JsonArray books = user.getAsJsonArray("Books");
-                                for (int j = 0; j < books.size(); j++) {
-                                    JsonObject book = books.get(j).getAsJsonObject();
-                                    if (book.get("BookID").getAsString().equals(bookId)) {
-                                        books.remove(j);
-                                        boolean success = saveJsonFile(userData, userDatabasePath);
-                                        if (success) {
-                                            logger.log(Level.INFO, "Successfully removed book " + bookId + " from user " + userId);
-                                        }
-                                        return success;
+
+                            switch (operation) {
+                                case BORROW:
+                                    if (!user.has("Books")) {
+                                        user.add("Books", new JsonArray());
                                     }
-                                }
+
+                                    JsonArray borrowBooks = user.getAsJsonArray("Books");
+
+                                    JsonObject newBook = new JsonObject();
+                                    newBook.addProperty("BookID", bookId);
+
+                                    String currentDate = java.time.LocalDate.now().toString();
+                                    String encryptedDate = main.core.SecurityManager.encrypt(currentDate, password);
+                                    newBook.addProperty("DateIssued", encryptedDate);
+
+                                    newBook.addProperty("Status", 1);
+
+                                    borrowBooks.add(newBook);
+
+                                    // SAVE AND RETURN
+                                    boolean borrowSuccess = saveJsonFile(userData, userDatabasePath);
+                                    if (borrowSuccess) {
+                                        logger.log(Level.INFO, "Successfully added book " + bookId + " to user " + userId);
+                                    }
+                                    return !borrowSuccess;
+                                    
+                                case RETURN:
+                                    if (user.has("Books") && !user.get("Books").isJsonNull()) {
+                                        JsonArray returnBooks = user.getAsJsonArray("Books");
+                                        for (int j = 0; j < returnBooks.size(); j++) {
+                                            JsonObject book = returnBooks.get(j).getAsJsonObject();
+                                            if (book.get("BookID").getAsString().equals(bookId)) {
+                                                returnBooks.remove(j);
+                                                
+                                                // SAVE AND RETURN
+                                                boolean returnSuccess = saveJsonFile(userData, userDatabasePath);
+                                                if (returnSuccess) {
+                                                    logger.log(Level.INFO, "Successfully removed book " + bookId + " from user " + userId);
+                                                }
+                                                return !returnSuccess;
+                                            }
+                                        }
+                                    }
+                                    // User found but book not found for removal
+                                    logger.log(Level.WARNING, "Book " + bookId + " not found in user " + userId + "'s borrowed list");
+                                    return true;
                             }
-                            return false; // User found but book not found
                         }
                     } catch (Exception _) {
                         continue; // Wrong password, try next user
                     }
                 }
             }
-        
-            return false; // User not found
-        
+
+            return true; // User not found
+
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error removing book from user: " + userId, e);
-            return false;
+            String operationStr = (operation == BookOperation.BORROW) ? "adding" : "removing";
+            logger.log(Level.SEVERE, "Error " + operationStr + " book for user: " + userId, e);
+            return true;
         }
     }
+
 }

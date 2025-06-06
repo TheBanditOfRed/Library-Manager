@@ -6,12 +6,15 @@ import com.google.gson.JsonObject;
 import java.util.regex.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages database operations for the library management system, handling user authentication,
  * book searches, and borrowing status.
  */
 public class DataBaseManager {
+    private static final Logger logger = Logger.getLogger(DataBaseManager.class.getName());
     public final String BOOK_DATABASE_PATH = "main/resources/data/BookData.json";
     public final String USER_DATABASE_PATH = "main/resources/data/UserData.json";
 
@@ -27,7 +30,7 @@ public class DataBaseManager {
         try{
             JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
             if (userData == null) {
-                System.out.println("No user data found.");
+                logger.warning("No user data found in database file: " + USER_DATABASE_PATH);
                 return null;
             }
 
@@ -51,7 +54,7 @@ public class DataBaseManager {
             return null;
 
         } catch (Exception e) {
-            System.err.println("Failed to find user: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to find user: " + id, e);
             return null;
         }
     }
@@ -64,6 +67,7 @@ public class DataBaseManager {
      * @return JsonArray of books that match the search criteria
      */
     public JsonArray findBooks(String searchTerm) {
+        logger.fine("Searching books with term: " + searchTerm);
         JsonArray filteredBooks = new JsonArray();
         JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
 
@@ -81,6 +85,9 @@ public class DataBaseManager {
                     filteredBooks.add(book);
                 }
             }
+            logger.info("Book search completed: found " + filteredBooks.size() + " books matching '" + searchTerm + "'");
+        } else {
+            logger.severe("Failed to load book database for search operation");
         }
         return filteredBooks;
     }
@@ -249,6 +256,7 @@ public class DataBaseManager {
      * @return The user type as a string, or null if not found
      */
     public String getUserType(String userId, String password) {
+        logger.fine("Determining user type for user: " + userId);
         JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
 
         if (userData == null) {
@@ -291,7 +299,7 @@ public class DataBaseManager {
         try {
             JsonManager.saveJsonDueStatus(currentUser, bookId, statusActual, USER_DATABASE_PATH, key);
         } catch (Exception e) {
-            System.err.println("Failed to update due status: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to update due status for user " + currentUser + " book " + bookId, e);
         }
     }
 
@@ -304,6 +312,7 @@ public class DataBaseManager {
      * @return A unique book ID or null if the shelf number is invalid
      */
     public String generateBookID(String shelfNumber, String bookTitle) {
+        logger.fine("Generating book ID for shelf " + shelfNumber + " and title: " + bookTitle);
         try {
             int shelfNum = Integer.parseInt(shelfNumber);
             String shelfCode = generateShelfCode(shelfNum);
@@ -315,10 +324,12 @@ public class DataBaseManager {
             int hash = Math.abs(bookTitle.hashCode());
             int sixDigitHash = hash % 1000000;
 
-            return shelfCode + String.format("%06d", sixDigitHash);
+            String bookId = shelfCode + String.format("%06d", sixDigitHash);
+            logger.info("Generated book ID: " + bookId + " for book: " + bookTitle);
+            return bookId;
 
         } catch (NumberFormatException e) {
-            System.err.println("Invalid shelf number: " + e.getMessage());
+            logger.log(Level.WARNING, "Failed to generate book ID for shelf " + shelfNumber, e);
             return null;
         }
     }
@@ -356,19 +367,19 @@ public class DataBaseManager {
      */
     public boolean returnBook(String userId, String bookId, String password) {
         try {
-            if (!JsonManager.removeUserBook(userId, bookId, password, USER_DATABASE_PATH)) {
-                System.err.println("Failed to remove book from user's borrowed list");
+            if (JsonManager.modifyUserBook(userId, bookId, password, USER_DATABASE_PATH, JsonManager.BookOperation.RETURN)) {
+                logger.severe("Failed to remove book " + bookId + " from user " + userId + "'s borrowed list");
                 return false;
             }
 
-            if (!JsonManager.updateBookReturn(bookId, BOOK_DATABASE_PATH)) {
-                System.err.println("Warning: Failed to update book availability. Book removed from user but availability not updated.");
+            if (JsonManager.updateBookAvailability(bookId, BOOK_DATABASE_PATH, JsonManager.BookOperation.RETURN)) {
+                logger.warning("Failed to update book availability after return. Book removed from user but availability not updated for: " + bookId);
             }
             
             return true;
             
         } catch (Exception e) {
-            System.err.println("Failed to return book: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to return book " + bookId + " for user " + userId, e);
             return false;
         }
     }
@@ -390,5 +401,95 @@ public class DataBaseManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Borrows a book for a specific user and updates both user and book databases.
+     *
+     * @param userId The ID of the user borrowing the book
+     * @param shelf The shelf number where the book is located
+     * @param bookTitle The title of the book being borrowed
+     * @param password The password for decryption
+     * @return true if the book was successfully borrowed, false otherwise
+     */
+    public boolean borrowBook(String userId, String shelf, String bookTitle, String password){
+        try {
+            String bookId = generateBookID(shelf, bookTitle);
+
+            if (JsonManager.modifyUserBook(userId, bookId, password, USER_DATABASE_PATH, JsonManager.BookOperation.BORROW)) {
+                logger.severe("Failed to add book " + bookId + " to user " + userId + "'s borrowed list");
+                return false;
+            }
+
+            if (JsonManager.updateBookAvailability(bookId, BOOK_DATABASE_PATH, JsonManager.BookOperation.BORROW)) {
+                logger.warning("Failed to update book availability after borrow. Book added to user but availability not updated for: " + bookId);
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to borrow book " + bookTitle + " for user " + userId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a user already has a specific book borrowed.
+     *
+     * @param userId The ID of the user
+     * @param shelf The shelf number where the book is located
+     * @param bookTitle The title of the book to check
+     * @param password The password for decryption
+     * @return true if the user already has the book borrowed, false otherwise
+     */
+    public boolean hasUserBorrowedBook(String userId, String shelf, String bookTitle, String password) {
+        String bookId = generateBookID(shelf, bookTitle);
+        logger.fine("Checking if user " + userId + " has already borrowed book " + bookId);
+        
+        try {
+            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
+            if (userData == null) {
+                logger.warning("No user data found in database file: " + USER_DATABASE_PATH);
+                return false;
+            }
+
+            for (String userType : new String[]{"Students", "General Public", "Admins"}) {
+                JsonArray users = userData.getAsJsonArray(userType);
+                for (int i = 0; i < users.size(); i++) {
+                    JsonObject user = users.get(i).getAsJsonObject();
+                    String encryptedId = user.get("UserID").getAsString();
+
+                    try {
+                        String decryptedId = SecurityManager.decrypt(encryptedId, password);
+                        if (decryptedId.equals(userId)) {
+                            // Found the user, now check their borrowed books
+                            if (user.has("Books") && !user.get("Books").isJsonNull()) {
+                                JsonArray books = user.getAsJsonArray("Books");
+                                for (int j = 0; j < books.size(); j++) {
+                                    JsonObject borrowedBook = books.get(j).getAsJsonObject();
+                                    String borrowedBookId = borrowedBook.get("BookID").getAsString();
+                                    if (borrowedBookId.equals(bookId)) {
+                                        logger.info("User " + userId + " already has book " + bookId + " borrowed");
+                                        return true;
+                                    }
+                                }
+                            }
+                            // User found but doesn't have this book
+                            logger.fine("User " + userId + " does not have book " + bookId + " borrowed");
+                            return false;
+                        }
+                    } catch (Exception e) {
+                        continue;
+                    }
+                }
+            }
+
+            logger.warning("User " + userId + " not found in database");
+            return false;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to check if user " + userId + " has borrowed book " + bookId, e);
+            return false;
+        }
     }
 }

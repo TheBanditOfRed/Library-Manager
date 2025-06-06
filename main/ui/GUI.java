@@ -11,6 +11,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.prefs.Preferences;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Main graphical user interface for the library management system.
@@ -19,6 +21,7 @@ import java.util.prefs.Preferences;
  * Uses a card layout to switch between login and main application screens.
  */
 public class GUI extends JFrame {
+    private static final Logger logger = Logger.getLogger(GUI.class.getName());
     private final JPanel cardPanel;
     private final CardLayout cardLayout;
     private JPanel loginPanel;
@@ -39,6 +42,7 @@ public class GUI extends JFrame {
      * and displays the login screen initially.
      */
     public GUI() {
+        logger.info("Initializing GUI application window");
         setTitle(ResourceManager.getString("app.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
@@ -47,7 +51,6 @@ public class GUI extends JFrame {
         cardPanel = new JPanel(cardLayout);
 
         createLoginPanel();
-
         createMainPanel();
 
         cardPanel.add(loginPanel, "login");
@@ -56,6 +59,7 @@ public class GUI extends JFrame {
         cardLayout.show(cardPanel, "login");
 
         setContentPane(cardPanel);
+        logger.info("GUI initialization completed - displaying login screen");
     }
 
     /**
@@ -108,6 +112,7 @@ public class GUI extends JFrame {
             JsonObject user = dbm.findUser(id, password);
 
             if (id.isEmpty() || password.isEmpty()) {
+                logger.info("Login attempt with empty credentials");
 
                 GuiHelper.showErrorDialog(loginPanel,
                         ResourceManager.getString("login.error.empty"),
@@ -123,6 +128,7 @@ public class GUI extends JFrame {
                     String decryptedPassword = SecurityManager.decrypt(encryptedPassword, password);
 
                     if (decryptedPassword.equals(password)) {
+                        logger.info("Successful login for user: " + id);
                         // Password acts as encryption key for other user data
                         key = password;
 
@@ -134,12 +140,14 @@ public class GUI extends JFrame {
 
                         switchToMainPanel();
                     } else {
+                        logger.warning("Failed login attempt - incorrect password for user: " + id);
                         GuiHelper.showErrorDialog(loginPanel,
                                 ResourceManager.getString("login.error.invalid.password"),
                                 ResourceManager.getString("error")
                         );
                     }
                 } catch (RuntimeException ex) {
+                    logger.warning("Failed login attempt - decryption failed for user: " + id);
                     // Decryption failure treated as authentication failure
                     GuiHelper.showErrorDialog(loginPanel,
                             ResourceManager.getString("login.error.invalid.password"),
@@ -147,6 +155,7 @@ public class GUI extends JFrame {
                     );
                 }
             } else {
+                logger.warning("Failed login attempt - user not found: " + id);
                 GuiHelper.showErrorDialog(loginPanel,
                         ResourceManager.getString("login.error.invalid"),
                         ResourceManager.getString("error")
@@ -218,6 +227,9 @@ public class GUI extends JFrame {
      * @param languageCode The language code to switch to (e.g., "en" for English)
      */
     private void changeLanguage(String languageCode) {
+        String currentLanguage = prefs.get("language", "en");
+        logger.info("User " + (currentUser != null ? currentUser : "unknown") + " changing language from " + currentLanguage + " to " + languageCode);
+        
         try {
             if (languageCode == null || (!languageCode.equals("en") && !languageCode.equals("pt"))) {
                 GuiHelper.showErrorDialog(this,
@@ -229,8 +241,9 @@ public class GUI extends JFrame {
 
             try {
                 prefs.put("language", languageCode);
+                logger.info("Language preference saved successfully: " + languageCode);
             } catch (Exception e) {
-                System.err.println("Error saving language preference: " + e.getMessage());
+                logger.log(Level.WARNING, "Failed to save language preference", e);
             }
 
             try {
@@ -280,8 +293,9 @@ public class GUI extends JFrame {
                 } else if ("main".equals(currentCard)) {
                     updateMainPanel();
                 }
+                logger.info("UI text updated successfully for new language");
             } catch (Exception e) {
-                System.err.println("Error updating UI panels: " + e.getMessage());
+                logger.log(Level.WARNING, "Failed to update UI panels - ", e);
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.update") + ": " + e.getMessage(),
                         ResourceManager.getString("error")
@@ -291,7 +305,7 @@ public class GUI extends JFrame {
             revalidate();
             repaint();
         } catch (Exception e) {
-            System.err.println("Critical error updating UI: " + e.getMessage());
+            logger.log(Level.SEVERE, "Critical error updating UI text", e);
             GuiHelper.showErrorDialog(this,
                     ResourceManager.getString("error.ui.critical") + ": " + e.getMessage(),
                     ResourceManager.getString("error")
@@ -336,7 +350,7 @@ public class GUI extends JFrame {
                 try {
                     loadMyBooksToTable(myBooksModel);
                 } catch (Exception e) {
-                    System.err.println("Error reloading book data: " + e.getMessage());
+                    logger.log(Level.SEVERE, "Failed to update main panel: " + e.getMessage(), e);
                 }
             }
         } catch (Exception e) {
@@ -350,6 +364,7 @@ public class GUI extends JFrame {
      * Resets the login form fields.
      */
     private void logout() {
+        logger.info("User " + currentUser + " initiated logout");
         currentUser = null;
         currentUserName = null;
         key = null;
@@ -357,6 +372,7 @@ public class GUI extends JFrame {
         idField.setText("");
         passwordField.setText("");
         cardLayout.show(cardPanel, "login");
+        logger.info("User logout completed - returned to login screen");
     }
 
     /**
@@ -367,6 +383,8 @@ public class GUI extends JFrame {
      * @return JPanel containing the book browsing interface
      */
     private JPanel createBrowseBooksPanel() {
+        DataBaseManager dbm = new DataBaseManager();
+
         JPanel panel = new JPanel(new BorderLayout());
         JTextField searchField = new JTextField(20);
         JButton searchButton = new JButton(ResourceManager.getString("button.search"));
@@ -386,8 +404,13 @@ public class GUI extends JFrame {
         TableUtils.TableComponents tableComponents = TableUtils.createCenteredTable(columns);
         DefaultTableModel browseBooksTableModel = tableComponents.model();
 
+        JPanel buttonPanel = new JPanel();
+        JButton borrowButton = new JButton(ResourceManager.getString("button.borrow"));
+        buttonPanel.add(borrowButton);
+
         panel.add(searchPanel, BorderLayout.NORTH);
         panel.add(tableComponents.scrollPane(), BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
 
         loadBrowseBooksToTable(browseBooksTableModel, "");
 
@@ -399,6 +422,68 @@ public class GUI extends JFrame {
         });
 
         // TODO: ADD BORROW BUTTON TO EACH ROW
+        borrowButton.addActionListener(_ -> {
+            try {
+                if (GuiHelper.isRowSelected(tableComponents.table(), panel,
+                        ResourceManager.getString("button.borrow.noselection"))) {
+                    int selectedRow = tableComponents.table().getSelectedRow();
+
+                    if (selectedRow < 0 || selectedRow >= browseBooksTableModel.getRowCount()) {
+                        GuiHelper.showErrorDialog(panel,
+                                ResourceManager.getString("error.invalid.selection"),
+                                ResourceManager.getString("error")
+                        );
+                        return;
+                    }
+
+                    String shelf = browseBooksTableModel.getValueAt(selectedRow, 0).toString();
+                    String title = browseBooksTableModel.getValueAt(selectedRow, 1).toString();
+                    String available = browseBooksTableModel.getValueAt(selectedRow, 4).toString();
+                    
+                    if (available.equals(ResourceManager.getString("no"))) {
+                        GuiHelper.showErrorDialog(panel,
+                                ResourceManager.getString("error.book.unavailable"),
+                                ResourceManager.getString("error")
+                        );
+                        return;
+                    }
+
+                    if (dbm.hasUserBorrowedBook(currentUser, title, shelf, key)) {
+                        GuiHelper.showErrorDialog(panel,
+                                ResourceManager.getString("error.book.already.borrowed"),
+                                ResourceManager.getString("error")
+                        );
+                        return;
+                    }
+
+                    boolean success = dbm.borrowBook(currentUser, shelf, title, key);
+                    
+                    if (success) {
+                        JOptionPane.showMessageDialog(panel,
+                                ResourceManager.getString("book.borrow.success", title),
+                                ResourceManager.getString("success"),
+                                JOptionPane.INFORMATION_MESSAGE);
+
+                        loadBrowseBooksToTable(browseBooksTableModel, searchField.getText());
+
+                        if (myBooksModel != null) {
+                            loadMyBooksToTable(myBooksModel);
+                        }
+
+                    } else {
+                        GuiHelper.showErrorDialog(panel,
+                                ResourceManager.getString("error.borrow.failed"),
+                                ResourceManager.getString("error")
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                GuiHelper.showErrorDialog(panel,
+                        ResourceManager.getString("error.borrow.failed") + ": " + e.getMessage(),
+                        ResourceManager.getString("error")
+                );
+            }
+        });
 
         return panel;
     }
@@ -472,16 +557,19 @@ public class GUI extends JFrame {
                     });
                 } catch (Exception e) {
                     // Individual book processing errors don't stop the entire loading process
-                    System.err.println("Error processing book data: " + e.getMessage());
+                    logger.log(Level.WARNING, "Error processing book data at index " + i, e);
                 }
             }
         } catch (Exception e) {
             // Handle catastrophic database failures with a single error row
+            logger.log(Level.SEVERE, "Failed to load user's borrowed books for: " + currentUser, e);
+
             model.addRow(new Object[]{
                     "-",
                     ResourceManager.getString("error.database"),
                     "-", "-", "-"
             });
+            
             GuiHelper.showErrorDialog(this,
                     ResourceManager.getString("error.database") + ": " + e.getMessage(),
                     ResourceManager.getString("error")
@@ -537,7 +625,6 @@ public class GUI extends JFrame {
                     }
 
                     String bookTitle = myBooksTableModel.getValueAt(selectedRow, 0).toString();
-                    String dateIssued = myBooksTableModel.getValueAt(selectedRow, 1).toString();
                     String dateDue = myBooksTableModel.getValueAt(selectedRow, 2).toString();
                     String status = myBooksTableModel.getValueAt(selectedRow, 3).toString();
 
@@ -736,7 +823,7 @@ public class GUI extends JFrame {
                             try {
                                 dbm.updateDueStatus(currentUser, bookId, statusActual, key);
                             } catch (Exception e) {
-                                System.err.println("Error updating due status: " + e.getMessage());
+                                logger.log(Level.WARNING, "Failed to update due status for book: " + bookId, e);
                             }
                         }
                     } catch (Exception e) {
@@ -753,7 +840,7 @@ public class GUI extends JFrame {
                     });
                 } catch (Exception e) {
                     loadErrors++;
-                    System.err.println("Error loading book: " + e.getMessage());
+                    logger.log(Level.WARNING, "Failed to load book data at index " + i, e);
                 }
             }
 
@@ -806,11 +893,13 @@ public class GUI extends JFrame {
      * Includes error handling for component access and database operations.
      */
     private void switchToMainPanel() {
+        logger.info("User " + currentUser + " successfully authenticated - switching to main panel");
+
         try {
             try {
                 welcomeLabel.setText(ResourceManager.getString("welcome.user", currentUserName));
             } catch (Exception e) {
-                System.err.println("Error updating welcome message: " + e.getMessage());
+                logger.log(Level.WARNING, "Failed to update welcome message", e);
             }
 
             try {
@@ -819,7 +908,7 @@ public class GUI extends JFrame {
                     loadMyBooksToTable(myBooksModel);
                 }
             } catch (Exception e) {
-                System.err.println("Error loading user's books: " + e.getMessage());
+                logger.log(Level.SEVERE, "Failed to load user's borrowed books", e);
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.load.books") + ": " + e.getMessage(),
                         ResourceManager.getString("error")
@@ -844,33 +933,33 @@ public class GUI extends JFrame {
                             (component != null ? component.getClass().getName() : "null"));
                 }
             } catch (IndexOutOfBoundsException e) {
-                System.err.println("Error accessing tabbed pane: " + e.getMessage());
+                logger.log(Level.WARNING, "Failed to access tabbed pane in main panel", e);
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.component") + ": " + e.getMessage(),
                         ResourceManager.getString("error")
                 );
             } catch (ClassCastException e) {
-                System.err.println("Error with UI component type: " + e.getMessage());
+                logger.log(Level.SEVERE, "Unexpected component type in main panel", e);
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.component") + ": " + e.getMessage(),
                         ResourceManager.getString("error")
                 );
             } catch (Exception e) {
-                System.err.println("Error updating admin tab: " + e.getMessage());
+                logger.log(Level.SEVERE, "Failed to update admin tab", e);
             }
 
             try {
                 // CardLayout switches between different panels (login, main, etc.)
                 cardLayout.show(cardPanel, "main");
             } catch (Exception e) {
-                System.err.println("Error switching to main panel: " + e.getMessage());
+                logger.log(Level.SEVERE, "Failed to switch to main panel", e);
                 GuiHelper.showErrorDialog(this,
                         ResourceManager.getString("error.ui.navigation") + ": " + e.getMessage(),
                         ResourceManager.getString("error")
                 );
             }
         } catch (Exception e) {
-            System.err.println("Critical error in switchToMainPanel: " + e.getMessage());
+            logger.log(Level.SEVERE, "Critical error in switchToMainPanel", e);
             GuiHelper.showErrorDialog(this,
                     ResourceManager.getString("error.login.failed") + ": " + e.getMessage(),
                     ResourceManager.getString("error")
