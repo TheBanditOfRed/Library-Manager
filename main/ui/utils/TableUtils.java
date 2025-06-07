@@ -1,14 +1,38 @@
-package main.ui;
+package main.ui.utils;
+
+import main.core.ResourceManager;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 
 /**
  * Utility class for creating and configuring tables in the library management system UI.
  * Provides methods to create standard and centered-aligned tables with non-editable cells.
  */
 public class TableUtils {
+    /**
+     * Checks if a row is selected in the given JTable.
+     * If no row is selected, displays an error message dialog.
+     *
+     * @param table The JTable to check for selection
+     * @param parentComponent The parent component for the dialog
+     * @param errorMsg The error message to display if no row is selected
+     * @return true if a row is selected, false otherwise
+     */
+    public static boolean isRowSelected(JTable table, Component parentComponent, String errorMsg) {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(parentComponent,
+                    errorMsg,
+                    ResourceManager.getString("error"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Record class that bundles together the components of a table setup.
      * Includes the JTable, its containing JScrollPane, and the table's model for data manipulation.
