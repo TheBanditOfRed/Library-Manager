@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import main.core.DataBaseManager;
 import main.core.ResourceManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.utils.DialogUtils;
 import main.ui.utils.StatusUtils;
@@ -102,7 +103,7 @@ public class BrowseBooksPanel extends JPanel {
                         return;
                     }
 
-                    if (dbm.hasUserBorrowedBook(LoginPanel.currentUser, title, shelf, LoginPanel.key)) {
+                    if (dbm.hasUserBorrowedBook(SessionManager.getInstance().getCurrentUser(), title, shelf, SessionManager.getInstance().getKey())) {
                         DialogUtils.showErrorDialog(panel,
                                 ResourceManager.getString("error.book.already.borrowed"),
                                 ResourceManager.getString("error")
@@ -110,7 +111,7 @@ public class BrowseBooksPanel extends JPanel {
                         return;
                     }
 
-                    boolean success = dbm.borrowBook(LoginPanel.currentUser, shelf, title, LoginPanel.key);
+                    boolean success = dbm.borrowBook(SessionManager.getInstance().getCurrentUser(), shelf, title, SessionManager.getInstance().getKey());
 
                     if (success) {
                         JOptionPane.showMessageDialog(panel,
@@ -214,7 +215,7 @@ public class BrowseBooksPanel extends JPanel {
             }
         } catch (Exception e) {
             // Handle catastrophic database failures with a single error row
-            logger.log(Level.SEVERE, "Failed to load user's borrowed books for: " + LoginPanel.currentUser, e);
+            logger.log(Level.SEVERE, "Failed to load user's borrowed books for: " + SessionManager.getInstance().getCurrentUser(), e);
 
             DialogUtils.showErrorDialog(gui,
                     ResourceManager.getString("error.database") + ": " + e.getMessage(),

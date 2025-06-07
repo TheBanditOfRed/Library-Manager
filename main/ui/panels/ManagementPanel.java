@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import main.core.DataBaseManager;
 import main.core.ResourceManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.utils.DialogUtils;
 import main.ui.utils.StatusUtils;
@@ -189,7 +190,7 @@ public class ManagementPanel extends JPanel {
                     availableField.setText("");
                     onLoanField.setText("");
 
-                    PanelManager.switchToManageBooksPanel(gui);
+                    PanelSwitcher.switchToManageBooksPanel(gui);
                 } else {
                     DialogUtils.showErrorDialog(panel,
                             ResourceManager.getString("error.book.add.failed") + "\n" + ResourceManager.getString("error.logs.check"),
@@ -206,7 +207,7 @@ public class ManagementPanel extends JPanel {
             }
         });
 
-        cancelButton.addActionListener(_ -> PanelManager.switchToManageBooksPanel(gui));
+        cancelButton.addActionListener(_ -> PanelSwitcher.switchToManageBooksPanel(gui));
 
         // Add title panel
         JPanel titlePanel = new JPanel();
@@ -448,7 +449,7 @@ public class ManagementPanel extends JPanel {
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to load user's borrowed books for: " + LoginPanel.currentUser, e);
+            logger.log(Level.SEVERE, "Failed to load user's borrowed books for: " + SessionManager.getInstance().getCurrentUser(), e);
             DialogUtils.showErrorDialog(gui,
                     ResourceManager.getString("error.database") + ": " + e.getMessage(),
                     ResourceManager.getString("error")

@@ -1,6 +1,7 @@
 package main.ui.panels;
 
 import main.core.ResourceManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 
 import javax.swing.*;
@@ -33,8 +34,8 @@ public class MainApplicationPanel extends JPanel {
             createMainPanel(gui);
             gui.cardPanel.add(mainPanel, "main");
 
-            if (LoginPanel.currentUserName != null) {
-                welcomeLabel.setText(ResourceManager.getString("welcome.user", LoginPanel.currentUserName));
+            if (SessionManager.getInstance().getCurrentUserName() != null) {
+                welcomeLabel.setText(ResourceManager.getString("welcome.user", SessionManager.getInstance().getCurrentUserName()));
             } else {
                 welcomeLabel.setText(ResourceManager.getString("welcome.message"));
             }

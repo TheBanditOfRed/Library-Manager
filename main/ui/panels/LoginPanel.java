@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import main.core.DataBaseManager;
 import main.core.ResourceManager;
 import main.core.SecurityManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.utils.DialogUtils;
 
@@ -13,149 +14,164 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * LoginPanel is responsible for creating and managing the login interface of the application.
- * It allows users to enter their user ID and password, authenticates them against the database,
- * and handles errors such as empty credentials or incorrect passwords.
- * The panel uses GridBagLayout for precise component positioning.
- */
 public class LoginPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(LoginPanel.class.getName());
 
-    /** Panel containing the login interface */
-    public static JPanel loginPanel;
+    private final JPasswordField passwordField;
+    private final JTextField idField;
+    private final GUI parentGUI;
+    private final SessionManager sessionManager;
 
-    /** Password input field for user authentication */
-    public static JPasswordField passwordField;
+    public LoginPanel(GUI gui) {
+        this.parentGUI = gui;
+        this.sessionManager = SessionManager.getInstance();
+        setLayout(new GridBagLayout());
+        
+        // Initialize components
+        this.passwordField = new JPasswordField(15);
+        this.idField = new JTextField(15);
+        
+        initializeComponents();
+    }
 
-    /** User ID input field for authentication */
-    public static JTextField idField;
-
-    /** ID of the currently logged-in user */
-    public static String currentUser;
-
-    /** Display name of the current user */
-    public static String currentUserName;
-
-    /** Encryption key derived from user's password */
-    public static String key;
-
-    /**
-     * Creates the login panel with user ID and password fields.
-     * Uses GridBagLayout for precise component positioning.
-     * Sets up the login button action to authenticate users and handle errors.
-     * @param gui The GUI instance to which the login panel will be added
-     */
-    public static void createLoginPanel(GUI gui) {
-        loginPanel = new JPanel(new GridBagLayout());
+    private void initializeComponents() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
 
+        // Create labels and button
         JLabel idLabel = new JLabel(ResourceManager.getString("login.userid"));
         JLabel passwordLabel = new JLabel(ResourceManager.getString("login.password"));
-        idField = new JTextField(15);
-        passwordField = new JPasswordField(15);
         JButton loginButton = new JButton(ResourceManager.getString("login.button"));
 
+        // Layout components
         gbc.gridx = 0;
         gbc.gridy = 0;
-        loginPanel.add(idLabel, gbc);
+        add(idLabel, gbc);
 
         gbc.gridx = 1;
-        loginPanel.add(idField, gbc);
+        add(idField, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
-        loginPanel.add(passwordLabel, gbc);
+        add(passwordLabel, gbc);
 
         gbc.gridx = 1;
-        loginPanel.add(passwordField, gbc);
+        add(passwordField, gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 2;
-        loginPanel.add(loginButton, gbc);
+        add(loginButton, gbc);
 
-        idField.addActionListener(_ -> passwordField.requestFocusInWindow());
-
-        passwordField.addActionListener(_ -> loginButton.doClick());
-
-        loginButton.addActionListener(_ -> {
-            String id = idField.getText();
-
-            char[] passwordChars = passwordField.getPassword();
-            String password = new String(passwordChars);
-            // Security practice: overwrite password in memory after use
-            Arrays.fill(passwordChars, '0');
-
-            DataBaseManager dbm = new DataBaseManager();
-            JsonObject user = dbm.findUser(id, password);
-
-            if (id.isEmpty() || password.isEmpty()) {
-                logger.log(Level.INFO, "Login attempt with empty credentials");
-
-                DialogUtils.showErrorDialog(loginPanel,
-                        ResourceManager.getString("login.error.empty"),
-                        ResourceManager.getString("error")
-                );
-                return;
-            }
-
-            if (user != null) {
-                try {
-                    String encryptedPassword = user.get("Password").getAsString();
-                    // Verify password by decrypting stored password and comparing
-                    String decryptedPassword = main.core.SecurityManager.decrypt(encryptedPassword, password);
-
-                    if (decryptedPassword.equals(password)) {
-                        logger.log(Level.INFO, "Successful login for user: " + id);
-                        // Password acts as encryption key for other user data
-                        key = password;
-
-                        String encryptedID = user.get("UserID").getAsString();
-                        currentUser = main.core.SecurityManager.decrypt(encryptedID, password);
-
-                        String encryptedName = user.get("Name").getAsString();
-                        currentUserName = SecurityManager.decrypt(encryptedName, password);
-
-                        PanelManager.switchToMainPanel(gui);
-                    } else {
-                        logger.log(Level.WARNING, "Failed login attempt - incorrect password for user: " + id);
-                        DialogUtils.showErrorDialog(loginPanel,
-                                ResourceManager.getString("login.error.invalid.password"),
-                                ResourceManager.getString("error")
-                        );
-                    }
-                } catch (RuntimeException ex) {
-                    logger.log(Level.WARNING, "Failed login attempt - decryption failed for user: " + id);
-                    // Decryption failure treated as authentication failure
-                    DialogUtils.showErrorDialog(loginPanel,
-                            ResourceManager.getString("login.error.invalid.password"),
-                            ResourceManager.getString("error")
-                    );
-                }
-            } else {
-                logger.log(Level.WARNING, "Failed login attempt - user not found: " + id);
-                DialogUtils.showErrorDialog(loginPanel,
-                        ResourceManager.getString("login.error.invalid"),
-                        ResourceManager.getString("error")
-                );
-            }
-        });
+        // Add listeners
+        setupActionListeners(loginButton);
     }
 
-    /**
-     * Updates the login panel with new language text.
-     * @param gui The GUI instance to update the login panel for
-     */
-    public static void updateLoginPanel(GUI gui) {
-        try {
-            Container contentPane = gui.getContentPane();
-            contentPane.remove(loginPanel);
-            createLoginPanel(gui);
-            gui.cardPanel.add(loginPanel, "login");
-            gui.cardLayout.show(gui.cardPanel, "login");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update login panel: " + e.getMessage(), e);
+    private void setupActionListeners(JButton loginButton) {
+        idField.addActionListener(_ -> passwordField.requestFocusInWindow());
+        passwordField.addActionListener(_ -> loginButton.doClick());
+        loginButton.addActionListener(_ -> handleLogin());
+    }
+
+    private void handleLogin() {
+        String id = idField.getText();
+        char[] passwordChars = passwordField.getPassword();
+        String password = new String(passwordChars);
+        Arrays.fill(passwordChars, '0');
+
+        if (id.isEmpty() || password.isEmpty()) {
+            logger.log(Level.INFO, "Login attempt with empty credentials");
+            DialogUtils.showErrorDialog(this,
+                    ResourceManager.getString("login.error.empty"),
+                    ResourceManager.getString("error"));
+            return;
         }
+
+        processLoginAttempt(id, password);
+    }
+
+    private void processLoginAttempt(String id, String password) {
+        DataBaseManager dbm = new DataBaseManager();
+        JsonObject user = dbm.findUser(id, password);
+
+        if (user != null) {
+            try {
+                String encryptedPassword = user.get("Password").getAsString();
+                String decryptedPassword = SecurityManager.decrypt(encryptedPassword, password);
+
+                if (decryptedPassword.equals(password)) {
+                    handleSuccessfulLogin(user, password);
+                } else {
+                    handleFailedLogin("incorrect_password", id);
+                }
+            } catch (RuntimeException ex) {
+                handleFailedLogin("decryption_failed", id);
+            }
+        } else {
+            handleFailedLogin("user_not_found", id);
+        }
+    }
+
+    private void handleSuccessfulLogin(JsonObject user, String password) {
+        try {
+            String encryptedID = user.get("UserID").getAsString();
+            String currentUser = SecurityManager.decrypt(encryptedID, password);
+
+            String encryptedName = user.get("Name").getAsString();
+            String currentUserName = SecurityManager.decrypt(encryptedName, password);
+
+            // Update session
+            sessionManager.login(currentUser, currentUserName, password);
+            
+            logger.log(Level.INFO, "Successful login for user: " + currentUser);
+            
+            // Switch to main panel
+            PanelSwitcher.switchToMainPanel(parentGUI);
+            
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error during successful login processing", e);
+            DialogUtils.showErrorDialog(this,
+                    ResourceManager.getString("error.login.failed"),
+                    ResourceManager.getString("error"));
+        }
+    }
+
+    private void handleFailedLogin(String reason, String id) {
+        logger.log(Level.WARNING, "Failed login attempt - " + reason + " for user: " + id);
+        String errorKey = switch (reason) {
+            case "incorrect_password", "decryption_failed" -> "login.error.invalid.password";
+            case "user_not_found" -> "login.error.invalid";
+            default -> "login.error.failed";
+        };
+        
+        DialogUtils.showErrorDialog(this,
+                ResourceManager.getString(errorKey),
+                ResourceManager.getString("error"));
+    }
+
+    public void clearFields() {
+        idField.setText("");
+        passwordField.setText("");
+    }
+
+    public static void updateLoginPanel(GUI gui) {
+        Container contentPane = gui.getContentPane();
+        Component[] components = gui.cardPanel.getComponents();
+        
+        // Find and remove old login panel
+        for (Component comp : components) {
+            if (comp instanceof LoginPanel) {
+                gui.cardPanel.remove(comp);
+                break;
+            }
+        }
+        
+        // Create and add new login panel
+        LoginPanel newLoginPanel = new LoginPanel(gui);
+        gui.cardPanel.add(newLoginPanel, "login");
+        gui.cardLayout.show(gui.cardPanel, "login");
+        
+        // Update display
+        gui.revalidate();
+        gui.repaint();
     }
 }

@@ -1,6 +1,7 @@
 package main.ui.utils;
 
 import main.core.ResourceManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.panels.LoginPanel;
 import main.ui.panels.MainApplicationPanel;
@@ -26,7 +27,7 @@ public class LanguageManager {
      */
     public static void changeLanguage(GUI gui, String languageCode) {
         String currentLanguage = gui.prefs.get("language", "en");
-        logger.log(Level.INFO, "User " + (LoginPanel.currentUser != null ? LoginPanel.currentUser : "unknown") + " changing language from " + currentLanguage + " to " + languageCode);
+        logger.log(Level.INFO, "User " + (SessionManager.getInstance().getCurrentUser() != null ? SessionManager.getInstance().getCurrentUser() : "unknown") + " changing language from " + currentLanguage + " to " + languageCode);
 
         try {
             if (languageCode == null || (!languageCode.equals("en") && !languageCode.equals("pt"))) {

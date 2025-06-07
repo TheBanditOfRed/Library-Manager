@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import main.core.DataBaseManager;
 import main.core.ResourceManager;
 import main.core.SecurityManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.utils.DialogUtils;
 import main.ui.utils.FeeCalculator;
@@ -19,8 +20,10 @@ import java.util.logging.Logger;
 
 public class MyBooksPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(MyBooksPanel.class.getName());
+
     /** Panel displaying books borrowed by the current user */
     public static JPanel myBooksPanel;
+
     /** Table model for the user's borrowed books */
     public static DefaultTableModel myBooksTableModel;
 
@@ -96,7 +99,7 @@ public class MyBooksPanel extends JPanel {
                                 int daysOverdue = dbm.getDaysOverdue(dateDue);
 
                                 if (daysOverdue > 0) {
-                                    double lateFee = FeeCalculator.calculateFee(daysOverdue, dbm.getUserType(LoginPanel.currentUser, LoginPanel.key));
+                                    double lateFee = FeeCalculator.calculateFee(daysOverdue, dbm.getUserType(SessionManager.getInstance().getCurrentUser(), SessionManager.getInstance().getKey()));
 
                                     int response = JOptionPane.showConfirmDialog(panel,
                                             ResourceManager.getString("confirm.return.overdue", lateFee),
@@ -108,14 +111,14 @@ public class MyBooksPanel extends JPanel {
                                         //! BUT CONSIDERING ITS NOT REQUIRED, WE JUST RETURN THE BOOK
                                         String bookID = dbm.findBookID(bookTitle);
                                         if (bookID != null) {
-                                            success = dbm.returnBook(LoginPanel.currentUser, bookID, LoginPanel.key);
+                                            success = dbm.returnBook(SessionManager.getInstance().getCurrentUser(), bookID, SessionManager.getInstance().getKey());
                                         }
                                     }
                                 }
                             } else {
                                 String bookID = dbm.findBookID(bookTitle);
                                 if (bookID != null) {
-                                    success = dbm.returnBook(LoginPanel.currentUser, bookID, LoginPanel.key);
+                                    success = dbm.returnBook(SessionManager.getInstance().getCurrentUser(), bookID, SessionManager.getInstance().getKey());
                                 }
                             }
 
@@ -166,7 +169,7 @@ public class MyBooksPanel extends JPanel {
 
         try {
             // Session validation check - both user and encryption key must exist
-            if (LoginPanel.currentUser == null || LoginPanel.key == null) {
+            if (SessionManager.getInstance().getCurrentUser() == null || SessionManager.getInstance().getKey() == null) {
                 model.addRow(new Object[]{
                         ResourceManager.getString("error.session"),
                         "", "", ""
@@ -182,7 +185,7 @@ public class MyBooksPanel extends JPanel {
             JsonArray books;
 
             try {
-                books = dbm.findBorrowedBooks(LoginPanel.currentUser, LoginPanel.key);
+                books = dbm.findBorrowedBooks(SessionManager.getInstance().getCurrentUser(), SessionManager.getInstance().getKey());
             } catch (Exception e) {
                 model.addRow(new Object[]{
                         ResourceManager.getString("error.load.books"),
@@ -234,7 +237,7 @@ public class MyBooksPanel extends JPanel {
                     String dateIssued;
                     try {
                         // DateIssued is stored encrypted and needs decryption
-                        dateIssued = SecurityManager.decrypt(book.get("DateIssued").getAsString(), LoginPanel.key);
+                        dateIssued = SecurityManager.decrypt(book.get("DateIssued").getAsString(), SessionManager.getInstance().getKey());
                     } catch (Exception e) {
                         dateIssued = ResourceManager.getString("date.unknown");
                         loadErrors++;
@@ -242,7 +245,7 @@ public class MyBooksPanel extends JPanel {
 
                     String userType;
                     try {
-                        userType = dbm.getUserType(LoginPanel.currentUser, LoginPanel.key);
+                        userType = dbm.getUserType(SessionManager.getInstance().getCurrentUser(), SessionManager.getInstance().getKey());
                         if (userType == null) {
                             throw new Exception("User type not found");
                         }
@@ -271,7 +274,7 @@ public class MyBooksPanel extends JPanel {
 
                         if (statusActual != statusSaved) {
                             try {
-                                dbm.updateDueStatus(LoginPanel.currentUser, bookId, statusActual, LoginPanel.key);
+                                dbm.updateDueStatus(SessionManager.getInstance().getCurrentUser(), bookId, statusActual, SessionManager.getInstance().getKey());
                             } catch (Exception e) {
                                 logger.log(Level.WARNING, "Failed to update due status for book: " + bookId, e);
                             }

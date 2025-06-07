@@ -1,6 +1,8 @@
 package main.ui;
 
+import main.core.LoggingManager;
 import main.core.ResourceManager;
+import main.core.SessionManager;
 import main.ui.panels.*;
 import main.ui.utils.LanguageManager;
 
@@ -21,10 +23,10 @@ public class GUI extends JFrame {
     private static final Logger logger = Logger.getLogger(GUI.class.getName());
 
     /** The main container panel that holds all UI cards */
-    public final JPanel cardPanel;
+    public JPanel cardPanel;
 
     /** Layout manager for switching between different UI screens */
-    public final CardLayout cardLayout;
+    public CardLayout cardLayout;
 
     /** User preferences storage for settings like language selection */
     public final Preferences prefs = Preferences.userNodeForPackage(GUI.class);
@@ -39,25 +41,39 @@ public class GUI extends JFrame {
      */
     public GUI() {
         logger.log(Level.INFO, "Initializing GUI application window");
+        initializeWindow();
+        initializeLayout();
+        initializePanels();
+        showLoginScreen();
+        logger.log(Level.INFO, "GUI initialization completed");
+    }
+
+    private void initializeWindow() {
         setTitle(ResourceManager.getString("app.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
         setApplicationIcon();
         setLocationRelativeTo(null);
+    }
 
+    private void initializeLayout() {
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
-
-        LoginPanel.createLoginPanel(this);
-        MainApplicationPanel.createMainPanel(this);
-
-        cardPanel.add(LoginPanel.loginPanel, "login");
-        cardPanel.add(MainApplicationPanel.mainPanel, "main");
-
-        cardLayout.show(cardPanel, "login");
-
         setContentPane(cardPanel);
-        logger.log(Level.INFO, "GUI initialization completed - displaying login screen");
+    }
+
+    private void initializePanels() {
+        // Create instance of LoginPanel
+        LoginPanel loginPanel = new LoginPanel(this);
+        cardPanel.add(loginPanel, "login");
+        
+        // Create main panel (assuming MainApplicationPanel is still static for now)
+        MainApplicationPanel.createMainPanel(this);
+        cardPanel.add(MainApplicationPanel.mainPanel, "main");
+    }
+
+    private void showLoginScreen() {
+        cardLayout.show(cardPanel, "login");
     }
 
     /**
@@ -129,9 +145,14 @@ public class GUI extends JFrame {
         JMenuItem logoutItem = new JMenuItem(ResourceManager.getString("menu.logout"));
         logoutItem.addActionListener(_ -> logout());
 
+        JMenuItem quitItem = new JMenuItem(ResourceManager.getString("menu.quit"));
+        quitItem.addActionListener(_ -> exitApplication());
+
         optionsMenu.add(languageMenu);
         optionsMenu.addSeparator();
         optionsMenu.add(logoutItem);
+        optionsMenu.addSeparator();
+        optionsMenu.add(quitItem);
 
         optionsMenu.show(component, 0, component.getHeight());
     }
@@ -142,15 +163,13 @@ public class GUI extends JFrame {
      * Resets the login form fields.
      */
     public void logout() {
-        logger.log(Level.INFO, "User " + LoginPanel.currentUser + " initiated logout");
-        LoginPanel.currentUser = null;
-        LoginPanel.currentUserName = null;
-        LoginPanel.key = null;
+        logger.log(Level.INFO, "Initiating logout");
+        SessionManager.getInstance().logout();
         MainApplicationPanel.welcomeLabel.setText(ResourceManager.getString("welcome.message"));
-        LoginPanel.idField.setText("");
-        LoginPanel.passwordField.setText("");
+        LoginPanel loginPanel = (LoginPanel) cardPanel.getComponent(0); // Assuming login panel is first
+        loginPanel.clearFields();
         cardLayout.show(cardPanel, "login");
-        logger.log(Level.INFO, "User logout completed - returned to login screen");
+        logger.log(Level.INFO, "Logout completed - returned to login screen");
     }
 
 
@@ -172,7 +191,7 @@ public class GUI extends JFrame {
             }
 
             // Refresh my books table (if user is logged in)
-            if (MyBooksPanel.myBooksTableModel != null && LoginPanel.currentUser != null) {
+            if (MyBooksPanel.myBooksTableModel != null && SessionManager.getInstance().getCurrentUser() != null) {
                 MyBooksPanel.loadMyBooksToTable(this, MyBooksPanel.myBooksTableModel);
             }
 
@@ -183,5 +202,40 @@ public class GUI extends JFrame {
         }
     }
 
+    /**
+     * Safely exits the application after confirming with the user
+     * and performing necessary cleanup.
+     */
+    private void exitApplication() {
+        int response = JOptionPane.showConfirmDialog(
+                this,
+                ResourceManager.getString("confirm.quit"),
+                ResourceManager.getString("confirm.quit.title"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
 
+        if (response == JOptionPane.YES_OPTION) {
+            logger.log(Level.INFO, "User initiated application shutdown");
+
+            try {
+                // Perform cleanup
+                if (SessionManager.getInstance().isLoggedIn()) {
+                    logout();
+                }
+
+                // Ensure all logs are written
+                LoggingManager.flushLogs();
+
+                logger.log(Level.INFO, "Application shutdown complete");
+
+                // Exit the application
+                System.exit(0);
+
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error during application shutdown", e);
+                System.exit(1);
+            }
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package main.ui.panels;
 
 import main.core.ResourceManager;
+import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.utils.DialogUtils;
 
@@ -10,12 +11,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * PanelManager is responsible for managing the main application panels,
+ * PanelSwitcher is responsible for managing the main application panels,
  * including switching between the login screen and the main application screen.
  * It handles user authentication, updates UI components, and manages error handling.
  */
-public class PanelManager extends JPanel {
-    private static final Logger logger = Logger.getLogger(PanelManager.class.getName());
+public class PanelSwitcher extends JPanel {
+    private static final Logger logger = Logger.getLogger(PanelSwitcher.class.getName());
 
     /**
      * Switches from the login screen to the main application screen.
@@ -23,11 +24,11 @@ public class PanelManager extends JPanel {
      * @param gui The GUI instance to which the main panel belongs
      */
     public static void switchToMainPanel(GUI gui) {
-        logger.log(Level.INFO, "User " + LoginPanel.currentUser + " successfully authenticated - switching to main panel");
+        logger.log(Level.INFO, "User " + SessionManager.getInstance().getCurrentUser() + " successfully authenticated - switching to main panel");
 
         try {
             try {
-                MainApplicationPanel.welcomeLabel.setText(ResourceManager.getString("welcome.user", LoginPanel.currentUserName));
+                MainApplicationPanel.welcomeLabel.setText(ResourceManager.getString("welcome.user", SessionManager.getInstance().getCurrentUser()));
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to update welcome message", e);
             }
@@ -55,7 +56,7 @@ public class PanelManager extends JPanel {
                     }
 
                     // Add admin tab only for admin users
-                    if ("admin".equals(LoginPanel.currentUser)) {
+                    if ("admin".equals(SessionManager.getInstance().getCurrentUser())) {
                         tabbedPane.addTab(ResourceManager.getString("tab.manage"), ManagementPanel.createManageBooksPanel(gui));
                     }
                 } else {
