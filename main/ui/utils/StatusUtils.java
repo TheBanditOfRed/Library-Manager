@@ -3,6 +3,7 @@ package main.ui.utils;
 import com.google.gson.JsonObject;
 import main.core.ResourceManager;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,5 +68,42 @@ public class StatusUtils {
 
         logger.log(Level.FINE, "Book validation passed for book: " + book.get("BookID").getAsString());
         return false;
+    }
+
+    /**
+     * Validates the fields for adding a new book.
+     * Checks if any of the required fields are empty.
+     *
+     * @param shelfNumber The shelf number of the book
+     * @param title The title of the book
+     * @param author The author of the book
+     * @param publisher The publisher of the book
+     * @param available The availability status of the book
+     * @param onLoan The on-loan status of the book
+     * @return true if any field is empty, false otherwise
+     */
+    public static boolean validateNewBookFields(String shelfNumber, String title, String author, String publisher, String available, String onLoan) {
+        return shelfNumber.isEmpty() || title.isEmpty() || author.isEmpty() || publisher.isEmpty() || available.isEmpty() || onLoan.isEmpty();
+    }
+
+    /**
+     * Validates that the numeric fields for a new book are valid integers.
+     * If any field is not a valid integer, it logs the error and returns true.
+     *
+     * @param shelfNumber The shelf number of the book
+     * @param available The number of available copies
+     * @param onLoan The number of copies currently on loan
+     * @return true if any field is not a valid integer, false otherwise
+     */
+    public static boolean validateNumericNewBookFields(String shelfNumber, String available, String onLoan) {
+        try {
+            Integer.parseInt(shelfNumber);
+            Integer.parseInt(available);
+            Integer.parseInt(onLoan);
+            return false;
+        } catch (NumberFormatException e) {
+            logger.log(Level.INFO, "Numeric validation failed for fields: " + e.getMessage());
+            return true;
+        }
     }
 }

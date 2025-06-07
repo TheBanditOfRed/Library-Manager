@@ -30,6 +30,24 @@ public class ManagementPanel extends JPanel {
     /** Search field for filtering books in management mode */
     public static JTextField manageBooksSearchField;
 
+    /** Input fields for adding or editing book properties */
+    private static JTextField shelfNumberField;
+
+    /** Input field for the book title. */
+    private static JTextField titleField;
+
+    /** Input field for the book author. */
+    private static JTextField authorField;
+
+    /** Input field for the book publisher. */
+    private static JTextField publisherField;
+
+    /** Input field for the number of available copies of the book. */
+    private static JTextField availableField;
+
+    /** Input field for the number of copies of the book currently on loan. */
+    private static JTextField onLoanField;
+
     /**
      * Creates a panel containing a form for adding a new book or editing an existing book.
      * The form includes fields for all book properties and handles validation and database operations.
@@ -56,20 +74,34 @@ public class ManagementPanel extends JPanel {
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
-        JTextField shelfNumberField = new JTextField(shelfNumber != null ? shelfNumber : "", 15);
-        JTextField titleField = new JTextField(title != null ? title : "", 15);
-        JTextField authorField = new JTextField(author != null ? author : "", 15);
-        JTextField publisherField = new JTextField(publisher != null ? publisher : "", 15);
-        JTextField availableField = new JTextField(available != null ? available : "", 15);
-        JTextField onLoanField = new JTextField(onLoan != null ? onLoan : "", 15);
+        // Populate fields with existing data or empty strings for new book
+        shelfNumberField = new JTextField(shelfNumber != null ? shelfNumber : "", 15);
+        titleField = new JTextField(title != null ? title : "", 15);
+        authorField = new JTextField(author != null ? author : "", 15);
+        publisherField = new JTextField(publisher != null ? publisher : "", 15);
+        availableField = new JTextField(available != null ? available : "", 15);
+        onLoanField = new JTextField(onLoan != null ? onLoan : "", 15);
 
-        // Labels
+        // Field labels
         JLabel shelfLabel = new JLabel(ResourceManager.getString("form.shelf") + ":");
         JLabel titleLabel = new JLabel(ResourceManager.getString("form.title") + ":");
         JLabel authorLabel = new JLabel(ResourceManager.getString("form.author") + ":");
         JLabel publisherLabel = new JLabel(ResourceManager.getString("form.publisher") + ":");
         JLabel availableLabel = new JLabel(ResourceManager.getString("form.available") + ":");
         JLabel onLoanLabel = new JLabel(ResourceManager.getString("form.onloan") + ":");
+
+        // Button panel
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton(isEditMode ? ResourceManager.getString("form.button.update") : ResourceManager.getString("form.button.add"));
+        JButton cancelButton = new JButton(ResourceManager.getString("form.button.cancel"));
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+
+        // Add title panel
+        JPanel titlePanel = new JPanel();
+        JLabel formTitle = new JLabel(isEditMode ? ResourceManager.getString("form.header.edit") : ResourceManager.getString("form.header.add"));
+        formTitle.setFont(formTitle.getFont().deriveFont(Font.BOLD, 16));
+        titlePanel.add(formTitle);
 
         // Add components to form
         gbc.gridx = 0;
@@ -108,123 +140,8 @@ public class ManagementPanel extends JPanel {
         gbc.gridx = 1;
         formPanel.add(onLoanField, gbc);
 
-        // Button panel
-        JPanel buttonPanel = new JPanel();
-        JButton saveButton = new JButton(isEditMode ? ResourceManager.getString("form.button.update") : ResourceManager.getString("form.button.add"));
-        JButton cancelButton = new JButton(ResourceManager.getString("form.button.cancel"));
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
+        setupActionListeners(gui, saveButton, cancelButton, panel, isEditMode, bookId);
 
-
-        // TODO: clean up action listeners
-
-        // Add action listeners
-
-        shelfNumberField.addActionListener(_ -> titleField.requestFocusInWindow());
-        titleField.addActionListener(_ -> authorField.requestFocusInWindow());
-        authorField.addActionListener(_ -> publisherField.requestFocusInWindow());
-        publisherField.addActionListener(_ -> availableField.requestFocusInWindow());
-        availableField.addActionListener(_ -> onLoanField.requestFocusInWindow());
-        onLoanField.addActionListener(_ -> saveButton.doClick());
-
-        saveButton.addActionListener(_ -> {
-            try {
-                // Validate input fields
-                String newShelfNumber = shelfNumberField.getText().trim();
-                String newTitle = titleField.getText().trim();
-                String newAuthor = authorField.getText().trim();
-                String newPublisher = publisherField.getText().trim();
-                String newAvailable = availableField.getText().trim();
-                String newOnLoan = onLoanField.getText().trim();
-
-                if (newShelfNumber.isEmpty() || newTitle.isEmpty() || newAuthor.isEmpty() ||
-                        newPublisher.isEmpty() || newAvailable.isEmpty() || newOnLoan.isEmpty()) {
-                    DialogUtils.showErrorDialog(panel,
-                            ResourceManager.getString("validation.fields.required"),
-                            ResourceManager.getString("validation.error")
-                    );
-                    return;
-                }
-
-                // Validate numeric fields
-                try {
-                    Integer.parseInt(newShelfNumber);
-                    Integer.parseInt(newAvailable);
-                    Integer.parseInt(newOnLoan);
-                } catch (NumberFormatException e) {
-                    DialogUtils.showErrorDialog(panel,
-                            ResourceManager.getString("validation.numeric"),
-                            ResourceManager.getString("validation.error")
-                    );
-                    return;
-                }
-
-                DataBaseManager dbm = new DataBaseManager();
-                boolean success;
-                String successMessage;
-
-                if (isEditMode) {
-                    success = dbm.updateBook(
-                            bookId,
-                            newShelfNumber,
-                            newTitle,
-                            newAuthor,
-                            newPublisher,
-                            Integer.parseInt(newAvailable),
-                            Integer.parseInt(newOnLoan)
-                    );
-                    successMessage = ResourceManager.getString("book.update.success");
-
-                } else {
-                    success = dbm.addBook(
-                            newShelfNumber,
-                            newTitle,
-                            newAuthor,
-                            newPublisher,
-                            Integer.parseInt(newAvailable),
-                            Integer.parseInt(newOnLoan)
-                    );
-                    successMessage = ResourceManager.getString("book.add.success");
-                }
-
-
-                if (success) {
-                    JOptionPane.showMessageDialog(panel,
-                            successMessage,
-                            ResourceManager.getString("success"),
-                            JOptionPane.INFORMATION_MESSAGE);
-
-                    shelfNumberField.setText("");
-                    titleField.setText("");
-                    authorField.setText("");
-                    publisherField.setText("");
-                    availableField.setText("");
-                    onLoanField.setText("");
-
-                    PanelSwitcher.switchToManageBooksPanel(gui);
-                } else {
-                    DialogUtils.showErrorDialog(panel,
-                            ResourceManager.getString("error.book.add.failed") + "\n" + ResourceManager.getString("error.logs.check"),
-                            "Database Error"
-                    );
-                }
-
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to add or update book: " + e.getMessage(), e);
-                DialogUtils.showErrorDialog(panel,
-                        ResourceManager.getString("error.book.add") + "\n" + ResourceManager.getString("error.logs.check"),
-                        "Error"
-                );
-            }
-        });
-
-        cancelButton.addActionListener(_ -> PanelSwitcher.switchToManageBooksPanel(gui));
-
-        // Add title panel
-        JPanel titlePanel = new JPanel();
-        JLabel formTitle = new JLabel(isEditMode ? ResourceManager.getString("form.header.edit") : ResourceManager.getString("form.header.add"));
-        formTitle.setFont(formTitle.getFont().deriveFont(Font.BOLD, 16));
-        titlePanel.add(formTitle);
 
         panel.add(titlePanel, BorderLayout.NORTH);
         panel.add(formPanel, BorderLayout.CENTER);
@@ -232,6 +149,128 @@ public class ManagementPanel extends JPanel {
 
         return panel;
 
+    }
+
+    /**
+     * Sets up action listeners for the form fields and buttons.
+     * Handles focus transitions between fields and button actions for saving or canceling.
+     *
+     * @param gui         The GUI instance to which the form belongs
+     * @param saveButton  The button to save the book data
+     * @param cancelButton The button to cancel the operation
+     * @param panel       The panel containing the form
+     * @param isEditMode  True if editing an existing book, false if adding a new book
+     * @param bookId      The ID of the book being edited, or null when adding a new book
+     */
+    private static void setupActionListeners(GUI gui, JButton saveButton, JButton cancelButton, JPanel panel, boolean isEditMode, String bookId){
+        shelfNumberField.addActionListener(_ -> titleField.requestFocusInWindow());
+        titleField.addActionListener(_ -> authorField.requestFocusInWindow());
+        authorField.addActionListener(_ -> publisherField.requestFocusInWindow());
+        publisherField.addActionListener(_ -> availableField.requestFocusInWindow());
+        availableField.addActionListener(_ -> onLoanField.requestFocusInWindow());
+        onLoanField.addActionListener(_ -> saveButton.doClick());
+
+        cancelButton.addActionListener(_ -> PanelSwitcher.switchToManageBooksPanel(gui));
+
+        saveButton.addActionListener(_ -> handleSave(gui, panel, isEditMode, bookId));
+    }
+
+    /**
+     * Handles the save action for adding or updating a book.
+     * Validates input fields, performs database operations, and provides user feedback.
+     *
+     * @param gui         The GUI instance to which the form belongs
+     * @param panel       The panel containing the form
+     * @param isEditMode  True if editing an existing book, false if adding a new book
+     * @param bookId      The ID of the book being edited, or null when adding a new book
+     */
+    private static void handleSave(GUI gui, JPanel panel, boolean isEditMode, String bookId){
+        try {
+            // Validate input fields
+            String newShelfNumber = shelfNumberField.getText().trim();
+            String newTitle = titleField.getText().trim();
+            String newAuthor = authorField.getText().trim();
+            String newPublisher = publisherField.getText().trim();
+            String newAvailable = availableField.getText().trim();
+            String newOnLoan = onLoanField.getText().trim();
+
+            if (StatusUtils.validateNewBookFields(newShelfNumber, newTitle, newAuthor, newPublisher, newAvailable, newOnLoan)){
+                DialogUtils.showErrorDialog(panel,
+                        ResourceManager.getString("validation.fields.required"),
+                        ResourceManager.getString("validation.error")
+                );
+                return;
+            }
+
+            if (StatusUtils.validateNumericNewBookFields(newShelfNumber, newAvailable, newOnLoan)) {
+                DialogUtils.showErrorDialog(panel,
+                        ResourceManager.getString("validation.numeric"),
+                        ResourceManager.getString("validation.error")
+                );
+                return;
+            }
+
+            DataBaseManager dbm = new DataBaseManager();
+            boolean success;
+            String successMessage;
+
+            if (isEditMode) {
+                success = dbm.updateBook(
+                        bookId,
+                        newShelfNumber,
+                        newTitle,
+                        newAuthor,
+                        newPublisher,
+                        Integer.parseInt(newAvailable),
+                        Integer.parseInt(newOnLoan)
+                );
+                successMessage = ResourceManager.getString("book.update.success");
+
+            } else {
+                success = dbm.addBook(
+                        newShelfNumber,
+                        newTitle,
+                        newAuthor,
+                        newPublisher,
+                        Integer.parseInt(newAvailable),
+                        Integer.parseInt(newOnLoan)
+                );
+                successMessage = ResourceManager.getString("book.add.success");
+            }
+
+            if (success) {
+                JOptionPane.showMessageDialog(panel,
+                        successMessage,
+                        ResourceManager.getString("success"),
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                clearFields();
+
+                PanelSwitcher.switchToManageBooksPanel(gui);
+            } else {
+                DialogUtils.showErrorDialog(panel,
+                        ResourceManager.getString("error.book.add.failed") + "\n" + ResourceManager.getString("error.logs.check"),
+                        "Database Error"
+                );
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to add or update book: " + e.getMessage(), e);
+            DialogUtils.showErrorDialog(panel,
+                    ResourceManager.getString("error.book.add") + "\n" + ResourceManager.getString("error.logs.check"),
+                    "Error"
+            );
+        }
+    }
+
+    /** Clears all input fields in the book form. */
+    private static void clearFields(){
+        shelfNumberField.setText("");
+        titleField.setText("");
+        authorField.setText("");
+        publisherField.setText("");
+        availableField.setText("");
+        onLoanField.setText("");
     }
 
     /**
