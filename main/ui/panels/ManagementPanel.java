@@ -115,7 +115,18 @@ public class ManagementPanel extends JPanel {
         buttonPanel.add(saveButton);
         buttonPanel.add(cancelButton);
 
+
+        // TODO: clean up action listeners
+
         // Add action listeners
+
+        shelfNumberField.addActionListener(_ -> titleField.requestFocusInWindow());
+        titleField.addActionListener(_ -> authorField.requestFocusInWindow());
+        authorField.addActionListener(_ -> publisherField.requestFocusInWindow());
+        publisherField.addActionListener(_ -> availableField.requestFocusInWindow());
+        availableField.addActionListener(_ -> onLoanField.requestFocusInWindow());
+        onLoanField.addActionListener(_ -> saveButton.doClick());
+
         saveButton.addActionListener(_ -> {
             try {
                 // Validate input fields

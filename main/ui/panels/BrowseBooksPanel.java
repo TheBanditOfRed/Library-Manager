@@ -23,8 +23,10 @@ import java.util.logging.Logger;
  */
 public class BrowseBooksPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(BrowseBooksPanel.class.getName());
+
     /** Table model for the book browsing interface */
     public static DefaultTableModel browseBooksTableModel;
+
     /** Search field for filtering books in browse mode */
     public static JTextField browseBooksSearchField;
 

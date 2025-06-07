@@ -33,11 +33,9 @@ public class GUI extends JFrame {
 
 
     /**
-     * Initializes the main application window and sets up the UI structure.
-     * Creates the card layout system for switching between login and main screens,
-     * initializes both login and main panels, configures window properties,
-     * and displays the login screen initially. Sets up the application icon
-     * and window close behavior.
+     * Constructs the GUI application window and initializes all components.
+     * Sets up the card layout for switching between login and main application panels.
+     * Loads application icons and sets the initial screen to the login panel.
      */
     public GUI() {
         logger.log(Level.INFO, "Initializing GUI application window");
@@ -48,6 +46,10 @@ public class GUI extends JFrame {
         logger.log(Level.INFO, "GUI initialization completed");
     }
 
+    /**
+     * Initializes the main application window with title, size, and icon.
+     * Sets the default close operation to exit the application.
+     */
     private void initializeWindow() {
         setTitle(ResourceManager.getString("app.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -56,12 +58,20 @@ public class GUI extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    /**
+     * Initializes the card layout and main panel container.
+     * Sets the content pane to the card panel for dynamic screen switching.
+     */
     private void initializeLayout() {
         cardLayout = new CardLayout();
         cardPanel = new JPanel(cardLayout);
         setContentPane(cardPanel);
     }
 
+    /**
+     * Initializes the panels for the login screen and main application.
+     * Adds the login panel and main application panel to the card layout.
+     */
     private void initializePanels() {
         // Create instance of LoginPanel
         LoginPanel loginPanel = new LoginPanel(this);
@@ -72,13 +82,12 @@ public class GUI extends JFrame {
         cardPanel.add(MainApplicationPanel.mainPanel, "main");
     }
 
+    /** Displays the login screen by switching to the login card in the card layout. */
     private void showLoginScreen() {
         cardLayout.show(cardPanel, "login");
     }
 
-    /**
-     * Sets the application icon with multiple sizes for better OS compatibility.
-     */
+    /** Sets the application icon with multiple sizes for better OS compatibility. */
     public void setApplicationIcon() {
         logger.log(Level.INFO, "Attempting to load application icons...");
 

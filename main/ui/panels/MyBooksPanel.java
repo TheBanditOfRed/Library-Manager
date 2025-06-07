@@ -18,6 +18,11 @@ import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * MyBooksPanel is responsible for displaying the books borrowed by the current user.
+ * It provides a table interface to view book details and a button to return books.
+ * The panel handles loading data from the database and updating the UI accordingly.
+ */
 public class MyBooksPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(MyBooksPanel.class.getName());
 

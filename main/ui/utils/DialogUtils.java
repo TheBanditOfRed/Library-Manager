@@ -9,7 +9,6 @@ import java.util.logging.Logger;
  * Utility class for GUI-related helper methods.
  */
 public class DialogUtils {
-
     private static final Logger logger = Logger.getLogger(DialogUtils.class.getName());
 
     /**

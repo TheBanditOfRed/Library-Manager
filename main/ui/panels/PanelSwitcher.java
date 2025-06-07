@@ -11,9 +11,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * PanelSwitcher is responsible for managing the main application panels,
- * including switching between the login screen and the main application screen.
- * It handles user authentication, updates UI components, and manages error handling.
+ * PanelSwitcher is responsible for switching between different panels in the application.
+ * It handles navigation from the login screen to the main application screen and manages
+ * the visibility of various components based on user authentication status.
  */
 public class PanelSwitcher extends JPanel {
     private static final Logger logger = Logger.getLogger(PanelSwitcher.class.getName());

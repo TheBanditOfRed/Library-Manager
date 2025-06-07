@@ -10,9 +10,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * MainApplicationPanel is responsible for creating and updating the main application panel.
- * It sets up the welcome message, options button, and tabbed interface for browsing books and viewing user books.
- * The panel uses BorderLayout for efficient space utilization.
+ * MainApplicationPanel is responsible for displaying the main application interface.
+ * It includes a welcome message, options button, and a tabbed pane for browsing books
+ * and viewing the user's books.
+ * The panel updates dynamically based on the current user's session.
  */
 public class MainApplicationPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(MainApplicationPanel.class.getName());

@@ -14,14 +14,33 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * LoginPanel is responsible for handling user login functionality.
+ * It includes fields for user ID and password, and manages the login process.
+ * The panel updates dynamically based on the current user's session.
+ */
 public class LoginPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(LoginPanel.class.getName());
 
+
+    /** Password input field for user authentication */
     private final JPasswordField passwordField;
+
+    /** User ID input field for authentication */
     private final JTextField idField;
+
+    /** Reference to the parent GUI container */
     private final GUI parentGUI;
+
+    /** Session manager instance for handling user sessions */
     private final SessionManager sessionManager;
 
+    /**
+     * Constructs a new LoginPanel with the specified GUI reference.
+     * Initializes the layout and components for user login.
+     *
+     * @param gui The GUI instance to which this panel belongs
+     */
     public LoginPanel(GUI gui) {
         this.parentGUI = gui;
         this.sessionManager = SessionManager.getInstance();
@@ -34,6 +53,10 @@ public class LoginPanel extends JPanel {
         initializeComponents();
     }
 
+    /**
+     * Initializes the components of the login panel.
+     * Sets up the layout, labels, and action listeners for user interaction.
+     */
     private void initializeComponents() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -66,12 +89,22 @@ public class LoginPanel extends JPanel {
         setupActionListeners(loginButton);
     }
 
+    /**
+     * Sets up action listeners for the login panel components.
+     * Handles focus transitions and login button actions.
+     *
+     * @param loginButton The button that triggers the login process
+     */
     private void setupActionListeners(JButton loginButton) {
         idField.addActionListener(_ -> passwordField.requestFocusInWindow());
         passwordField.addActionListener(_ -> loginButton.doClick());
         loginButton.addActionListener(_ -> handleLogin());
     }
 
+    /**
+     * Handles the login process when the user clicks the login button.
+     * Validates input fields and processes the login attempt.
+     */
     private void handleLogin() {
         String id = idField.getText();
         char[] passwordChars = passwordField.getPassword();
@@ -89,6 +122,13 @@ public class LoginPanel extends JPanel {
         processLoginAttempt(id, password);
     }
 
+    /**
+     * Processes the login attempt by checking the user credentials against the database.
+     * Handles successful and failed login attempts with appropriate actions.
+     *
+     * @param id The user ID entered by the user
+     * @param password The password entered by the user
+     */
     private void processLoginAttempt(String id, String password) {
         DataBaseManager dbm = new DataBaseManager();
         JsonObject user = dbm.findUser(id, password);
@@ -111,6 +151,13 @@ public class LoginPanel extends JPanel {
         }
     }
 
+    /**
+     * Handles a successful login by updating the session and switching to the main panel.
+     * Decrypts user information and logs the successful login event.
+     *
+     * @param user The JsonObject containing user data retrieved from the database
+     * @param password The password used for decryption and session management
+     */
     private void handleSuccessfulLogin(JsonObject user, String password) {
         try {
             String encryptedID = user.get("UserID").getAsString();
@@ -135,6 +182,13 @@ public class LoginPanel extends JPanel {
         }
     }
 
+    /**
+     * Handles a failed login attempt by displaying an error message and logging the event.
+     * Determines the reason for failure and shows the appropriate error dialog.
+     *
+     * @param reason The reason for the failed login attempt
+     * @param id The user ID that was attempted
+     */
     private void handleFailedLogin(String reason, String id) {
         logger.log(Level.WARNING, "Failed login attempt - " + reason + " for user: " + id);
         String errorKey = switch (reason) {
@@ -148,11 +202,21 @@ public class LoginPanel extends JPanel {
                 ResourceManager.getString("error"));
     }
 
+    /**
+     * Clears the input fields in the login panel.
+     * Resets both the user ID and password fields to empty strings.
+     */
     public void clearFields() {
         idField.setText("");
         passwordField.setText("");
     }
 
+    /**
+     * Updates the login panel in the GUI.
+     * Removes the old login panel and adds a new one, ensuring the card layout is refreshed.
+     *
+     * @param gui The GUI instance to update the login panel for
+     */
     public static void updateLoginPanel(GUI gui) {
         Container contentPane = gui.getContentPane();
         Component[] components = gui.cardPanel.getComponents();
