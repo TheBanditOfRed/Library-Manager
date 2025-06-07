@@ -40,11 +40,11 @@ public class GuiHelper {
      * Displays an error dialog with the specified title and message.
      *
      * @param parentComponent The parent component for the dialog, or null if there is no parent component
-     * @param title The title of the error dialog
      * @param message The error message to display
+     * @param title The title of the error dialog
      */
     public static void showErrorDialog(Component parentComponent, String message, String title) {
-        logger.info("Displaying error dialog to user: " + title + " - " + message);
+        logger.log(Level.INFO, "Displaying error dialog to user: " + title + " - " + message);
         JOptionPane.showMessageDialog(parentComponent, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
@@ -86,25 +86,25 @@ public class GuiHelper {
     /**
      * Validates that a book JSON object contains all required fields.
      *
-     * @param book The JsonObject representing a book
-     * @return true if all required fields are present, false otherwise
+     * @param book The JsonObject representing a book to validate
+     * @return true if all required fields are present or if book is null (for safety), false if any required field is missing
      */
     public static boolean hasRequiredBookFields(JsonObject book) {
         if (book == null) {
-            logger.warning("Book validation failed: null book object");
-            return false;
+            logger.log(Level.WARNING, "Book validation failed: null book object");
+            return true;
         }
         
         String[] requiredFields = {"BookID", "Title", "Author", "Publisher", "Available"};
         for (String field : requiredFields) {
             if (!book.has(field)) {
-                logger.warning("Book validation failed: missing field '" + field + "'");
-                return false;
+                logger.log(Level.WARNING, "Book validation failed: missing field '" + field + "'");
+                return true;
             }
         }
         
-        logger.fine("Book validation passed for book: " + book.get("BookID").getAsString());
-        return true;
+        logger.log(Level.FINE, "Book validation passed for book: " + book.get("BookID").getAsString());
+        return false;
     }
 
     /**

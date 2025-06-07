@@ -116,12 +116,12 @@ public class SecurityManager {
 
     /**
      * Derives a cryptographic key from a password using PBKDF2 with HMAC-SHA256.
-     * Uses a provided salt and a fixed iteration count to derive the key.
+     * Uses the provided salt and a fixed iteration count (65,536 iterations) to derive a 256-bit AES key.
      *
      * @param password The password to derive the key from
-     * @param salt The salt to use for key derivation
-     * @return A SecretKey object suitable for AES encryption
-     * @throws Exception if key derivation fails
+     * @param salt The cryptographic salt to use for key derivation (must be at least 16 bytes)
+     * @return A SecretKey object suitable for AES encryption/decryption operations
+     * @throws Exception if key derivation fails due to invalid parameters or cryptographic errors
      */
     private static SecretKey getKeyFromPassword(String password, byte[] salt) throws Exception {
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);

@@ -4,7 +4,7 @@
 ---
 
 # Library Manager - A Library Management System
-
+![icon.png](main/resources/icon/icon.png)
 ## Overview
 Library Manager is a comprehensive library management system designed to automate the operations of academic and public libraries. The system handles book inventory management, user authentication, borrowing and returning processes, and fine calculations.
 

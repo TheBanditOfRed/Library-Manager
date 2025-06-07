@@ -13,6 +13,7 @@ import java.util.logging.Logger;
  * Manages database operations for the library management system, handling user authentication,
  * book searches, and borrowing status.
  */
+@SuppressWarnings("UnnecessaryContinue")
 public class DataBaseManager {
     private static final Logger logger = Logger.getLogger(DataBaseManager.class.getName());
     public final String BOOK_DATABASE_PATH = "main/resources/data/BookData.json";
@@ -30,7 +31,7 @@ public class DataBaseManager {
         try{
             JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
             if (userData == null) {
-                logger.warning("No user data found in database file: " + USER_DATABASE_PATH);
+                logger.log(Level.WARNING, "No user data found in database file: " + USER_DATABASE_PATH);
                 return null;
             }
 
@@ -67,7 +68,7 @@ public class DataBaseManager {
      * @return JsonArray of books that match the search criteria
      */
     public JsonArray findBooks(String searchTerm) {
-        logger.fine("Searching books with term: " + searchTerm);
+        logger.log(Level.FINE, "Searching books with term: " + searchTerm);
         JsonArray filteredBooks = new JsonArray();
         JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
 
@@ -85,9 +86,9 @@ public class DataBaseManager {
                     filteredBooks.add(book);
                 }
             }
-            logger.info("Book search completed: found " + filteredBooks.size() + " books matching '" + searchTerm + "'");
+            logger.log(Level.INFO, "Book search completed: found " + filteredBooks.size() + " books matching '" + searchTerm + "'");
         } else {
-            logger.severe("Failed to load book database for search operation");
+            logger.log(Level.SEVERE, "Failed to load book database for search operation");
         }
         return filteredBooks;
     }
@@ -256,7 +257,7 @@ public class DataBaseManager {
      * @return The user type as a string, or null if not found
      */
     public String getUserType(String userId, String password) {
-        logger.fine("Determining user type for user: " + userId);
+        logger.log(Level.FINE, "Determining user type for user: " + userId);
         JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
 
         if (userData == null) {
@@ -281,10 +282,6 @@ public class DataBaseManager {
         }
 
         return null;
-    }
-
-    public boolean saveUserData(JsonObject userData) {
-        return JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
     }
 
     /**
@@ -312,7 +309,7 @@ public class DataBaseManager {
      * @return A unique book ID or null if the shelf number is invalid
      */
     public String generateBookID(String shelfNumber, String bookTitle) {
-        logger.fine("Generating book ID for shelf " + shelfNumber + " and title: " + bookTitle);
+        logger.log(Level.FINE, "Generating book ID for shelf " + shelfNumber + " and title: " + bookTitle);
         try {
             int shelfNum = Integer.parseInt(shelfNumber);
             String shelfCode = generateShelfCode(shelfNum);
@@ -325,7 +322,7 @@ public class DataBaseManager {
             int sixDigitHash = hash % 1000000;
 
             String bookId = shelfCode + String.format("%06d", sixDigitHash);
-            logger.info("Generated book ID: " + bookId + " for book: " + bookTitle);
+            logger.log(Level.INFO, "Generated book ID: " + bookId + " for book: " + bookTitle);
             return bookId;
 
         } catch (NumberFormatException e) {
@@ -368,12 +365,12 @@ public class DataBaseManager {
     public boolean returnBook(String userId, String bookId, String password) {
         try {
             if (JsonManager.modifyUserBook(userId, bookId, password, USER_DATABASE_PATH, JsonManager.BookOperation.RETURN)) {
-                logger.severe("Failed to remove book " + bookId + " from user " + userId + "'s borrowed list");
+                logger.log(Level.SEVERE, "Failed to remove book " + bookId + " from user " + userId + "'s borrowed list");
                 return false;
             }
 
             if (JsonManager.updateBookAvailability(bookId, BOOK_DATABASE_PATH, JsonManager.BookOperation.RETURN)) {
-                logger.warning("Failed to update book availability after return. Book removed from user but availability not updated for: " + bookId);
+                logger.log(Level.WARNING, "Failed to update book availability after return. Book removed from user but availability not updated for: " + bookId);
             }
             
             return true;
@@ -417,12 +414,12 @@ public class DataBaseManager {
             String bookId = generateBookID(shelf, bookTitle);
 
             if (JsonManager.modifyUserBook(userId, bookId, password, USER_DATABASE_PATH, JsonManager.BookOperation.BORROW)) {
-                logger.severe("Failed to add book " + bookId + " to user " + userId + "'s borrowed list");
+                logger.log(Level.SEVERE, "Failed to add book " + bookId + " to user " + userId + "'s borrowed list");
                 return false;
             }
 
             if (JsonManager.updateBookAvailability(bookId, BOOK_DATABASE_PATH, JsonManager.BookOperation.BORROW)) {
-                logger.warning("Failed to update book availability after borrow. Book added to user but availability not updated for: " + bookId);
+                logger.log(Level.WARNING, "Failed to update book availability after borrow. Book added to user but availability not updated for: " + bookId);
             }
 
             return true;
@@ -444,12 +441,12 @@ public class DataBaseManager {
      */
     public boolean hasUserBorrowedBook(String userId, String shelf, String bookTitle, String password) {
         String bookId = generateBookID(shelf, bookTitle);
-        logger.fine("Checking if user " + userId + " has already borrowed book " + bookId);
+        logger.log(Level.FINE, "Checking if user " + userId + " has already borrowed book " + bookId);
         
         try {
             JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
             if (userData == null) {
-                logger.warning("No user data found in database file: " + USER_DATABASE_PATH);
+                logger.log(Level.WARNING, "No user data found in database file: " + USER_DATABASE_PATH);
                 return false;
             }
 
@@ -469,13 +466,13 @@ public class DataBaseManager {
                                     JsonObject borrowedBook = books.get(j).getAsJsonObject();
                                     String borrowedBookId = borrowedBook.get("BookID").getAsString();
                                     if (borrowedBookId.equals(bookId)) {
-                                        logger.info("User " + userId + " already has book " + bookId + " borrowed");
+                                        logger.log(Level.INFO, "User " + userId + " already has book " + bookId + " borrowed");
                                         return true;
                                     }
                                 }
                             }
                             // User found but doesn't have this book
-                            logger.fine("User " + userId + " does not have book " + bookId + " borrowed");
+                            logger.log(Level.FINE, "User " + userId + " does not have book " + bookId + " borrowed");
                             return false;
                         }
                     } catch (Exception e) {
@@ -484,11 +481,311 @@ public class DataBaseManager {
                 }
             }
 
-            logger.warning("User " + userId + " not found in database");
+            logger.log(Level.WARNING, "User " + userId + " not found in database");
             return false;
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to check if user " + userId + " has borrowed book " + bookId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Adds a new book to the database.
+     *
+     * @param shelfNumber The shelf number where the book will be located
+     * @param title The title of the book
+     * @param author The author of the book
+     * @param publisher The publisher of the book
+     * @param available The number of available copies
+     * @param onLoan The number of copies currently on loan
+     * @return true if the book was successfully added, false otherwise
+     */
+    public boolean addBook(String shelfNumber, String title, String author, String publisher, int available, int onLoan) {
+        try {
+            logger.log(Level.INFO, "Adding new book: " + title);
+
+            String bookId = generateBookID(shelfNumber, title);
+            if (bookId == null) {
+                logger.log(Level.SEVERE, "Failed to generate book ID for shelf " + shelfNumber);
+                return false;
+            }
+
+            JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
+            if (bookData == null) {
+                logger.log(Level.SEVERE, "No book data found in database file: " + BOOK_DATABASE_PATH);
+                return false;
+            }
+
+            // Check if book already exists
+            for (int i = 0; i < bookData.size(); i++) {
+                JsonObject existingBook = bookData.get(i).getAsJsonObject();
+                if (existingBook.get("BookID").getAsString().equals(bookId)) {
+                    logger.log(Level.WARNING, "Book with ID " + bookId + " already exists");
+                    return false;
+                }
+            }
+
+            JsonObject newBook = new JsonObject();
+            newBook.addProperty("BookID", bookId);
+            newBook.addProperty("Title", title);
+            newBook.addProperty("Author", author);
+            newBook.addProperty("Publisher", publisher);
+            newBook.addProperty("Available", available);
+            newBook.addProperty("OnLoan", onLoan);
+
+            bookData.add(newBook);
+
+            boolean success = JsonManager.saveJsonArrayFile(bookData, BOOK_DATABASE_PATH);
+
+            if (success) {
+                logger.log(Level.INFO, "Successfully added book: " + title + " with ID: " + bookId);
+            } else {
+                logger.log(Level.SEVERE, "Failed to save book data after adding: " + title);
+            }
+
+            return success;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error adding book: " + title, e);
+            return false;
+        }
+    }
+
+
+    /**
+     * Updates an existing book in the database.
+     *
+     * @param originalBookId The original ID of the book to update
+     * @param shelfNumber The new shelf number
+     * @param title The new title
+     * @param author The new author
+     * @param publisher The new publisher
+     * @param available The new number of available copies
+     * @param onLoan The new number of copies on loan
+     * @return true if the book was successfully updated, false otherwise
+     */
+    public boolean updateBook(String originalBookId, String shelfNumber, String title, String author, String publisher, int available, int onLoan) {
+        try {
+            logger.log(Level.INFO, "Updating book with ID: " + originalBookId);
+
+            String newBookId = generateBookID(shelfNumber, title);
+            if (newBookId == null) {
+                logger.log(Level.WARNING, "Failed to generate book ID for shelf " + shelfNumber);
+                return false;
+            }
+
+            JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
+            if (bookData == null) {
+                logger.log(Level.SEVERE, "No book data found for update operation");
+                return false;
+            }
+
+            // Find and update the book
+            boolean bookFound = false;
+            for (int i = 0; i < bookData.size(); i++) {
+                JsonObject book = bookData.get(i).getAsJsonObject();
+                if (book.get("BookID").getAsString().equals(originalBookId)) {
+                    bookFound = true;
+
+                    // If book ID changed due to shelf/title change, check for conflicts
+                    if (!newBookId.equals(originalBookId)) {
+                        for (int j = 0; j < bookData.size(); j++) {
+                            if (j != i) {
+                                JsonObject otherBook = bookData.get(j).getAsJsonObject();
+                                if (otherBook.get("BookID").getAsString().equals(newBookId)) {
+                                    logger.log(Level.WARNING, "Cannot update book: new ID " + newBookId + " already exists");
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+
+                    book.addProperty("BookID", newBookId);
+                    book.addProperty("Title", title);
+                    book.addProperty("Author", author);
+                    book.addProperty("Publisher", publisher);
+                    book.addProperty("Available", available);
+                    book.addProperty("OnLoan", onLoan);
+
+                    break;
+                }
+            }
+
+            if (!bookFound) {
+                logger.log(Level.WARNING, "Book with ID " + originalBookId + " not found for update");
+                return false;
+            }
+
+            // If book ID changed, update user records
+            if (!newBookId.equals(originalBookId)) {
+                if(updateUserBookReferences(originalBookId, newBookId)) {
+                    logger.log(Level.INFO,"User book references updated successfully for book ID change");
+                } else {
+                    logger.log(Level.SEVERE,"Failed to update user book references for book ID change from " + originalBookId + " to " + newBookId);
+                }
+            }
+
+            // Save updated data
+            boolean success = JsonManager.saveJsonArrayFile(bookData, BOOK_DATABASE_PATH);
+
+            if (success) {
+                logger.log(Level.INFO, "Successfully updated book: " + originalBookId + " -> " + newBookId);
+            } else {
+                logger.log(Level.SEVERE, "Failed to save book data after updating: " + originalBookId);
+            }
+
+            return success;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error updating book: " + originalBookId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Updates book ID references in user borrowed books when a book ID changes,
+     * or removes book references when a book is deleted.
+     * This is necessary when shelf number or title changes, causing a new book ID,
+     * or when a book is completely removed from the system.
+     *
+     * @param oldBookId The old book ID to replace or remove
+     * @param newBookId The new book ID to use (null for deletion)
+     * @return true if the operation was successful, false otherwise
+     */
+    private boolean updateUserBookReferences(String oldBookId, String newBookId) {
+        boolean isDelete = false;
+        try {
+            isDelete = (newBookId == null);
+            String operationType = isDelete ? "Removing" : "Updating";
+            String logMessage = isDelete ?
+                    "Removing user book references for deleted book: " + oldBookId :
+                    "Updating user book references from " + oldBookId + " to " + newBookId;
+
+            logger.log(Level.INFO, logMessage);
+
+            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
+            if (userData == null) {
+                logger.log(Level.WARNING, "No user data found for book reference " + operationType.toLowerCase());
+                return false;
+            }
+
+            boolean updated = false;
+
+            // Iterate through all user types
+            for (String userType : new String[]{"Students", "General Public", "Admins"}) {
+                if (!userData.has(userType)) continue;
+
+                JsonArray users = userData.getAsJsonArray(userType);
+                for (int i = 0; i < users.size(); i++) {
+                    JsonObject user = users.get(i).getAsJsonObject();
+
+                    if (user.has("Books") && !user.get("Books").isJsonNull()) {
+                        JsonArray books = user.getAsJsonArray("Books");
+
+                        // Iterate backwards to safely remove elements during iteration
+                        for (int j = books.size() - 1; j >= 0; j--) {
+                            JsonObject book = books.get(j).getAsJsonObject();
+                            if (book.get("BookID").getAsString().equals(oldBookId)) {
+                                if (isDelete) {
+                                    // Remove the book from user's borrowed list
+                                    books.remove(j);
+                                    updated = true;
+                                    logger.log(Level.FINE, "Removed deleted book reference from user in " + userType);
+                                } else {
+                                    // Update the book ID
+                                    book.addProperty("BookID", newBookId);
+                                    updated = true;
+                                    logger.log(Level.FINE, "Updated book reference for user in " + userType);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (updated) {
+                boolean success = JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
+                if (success) {
+                    String successMessage = isDelete ?
+                            "Successfully removed user book references for deleted book" :
+                            "Successfully updated user book references";
+                    logger.log(Level.INFO, successMessage);
+                    return true;
+                } else {
+                    logger.log(Level.SEVERE, "Failed to save user data after " + operationType.toLowerCase() + " book references");
+                    return false;
+                }
+            } else {
+                String noUpdateMessage = isDelete ?
+                        "No user book references found for deleted book ID: " + oldBookId :
+                        "No user book references found for old book ID: " + oldBookId;
+                logger.log(Level.INFO, noUpdateMessage);
+                return true;
+            }
+
+        } catch (Exception e) {
+            String errorMessage = isDelete ?
+                    "Error removing user book references for deleted book: " + oldBookId :
+                    "Error updating user book references from " + oldBookId + " to " + newBookId;
+            logger.log(Level.SEVERE, errorMessage, e);
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a book from the database based on its ID.
+     *
+     * @param bookId The ID of the book to delete
+     * @return true if the book was successfully deleted, false otherwise
+     */
+    public boolean deleteBook(String bookId) {
+        try {
+            logger.log(Level.INFO, "Deleting book with ID: " + bookId);
+
+            JsonArray bookData = JsonManager.readJsonArrayFile(BOOK_DATABASE_PATH);
+            if (bookData == null) {
+                logger.log(Level.SEVERE, "No book data found for delete operation");
+                return false;
+            }
+
+            // Find and remove the book
+            boolean bookFound = false;
+            for (int i = 0; i < bookData.size(); i++) {
+                JsonObject book = bookData.get(i).getAsJsonObject();
+                if (book.get("BookID").getAsString().equals(bookId)) {
+                    bookData.remove(i);
+                    updateUserBookReferences(bookId, null);
+                    bookFound = true;
+                    logger.log(Level.INFO, "Book with ID " + bookId + " deleted successfully");
+                    break;
+                }
+            }
+
+            if (!bookFound) {
+                logger.log(Level.WARNING, "Book with ID " + bookId + " not found for deletion");
+                return false;
+            }
+
+            // Save updated data
+            boolean success = JsonManager.saveJsonArrayFile(bookData, BOOK_DATABASE_PATH);
+            if (success) {
+                logger.log(Level.INFO, "Successfully saved updated book database after deletion");
+            } else {
+                logger.log(Level.SEVERE, "Failed to save book data after deletion");
+            }
+
+            // Update user records to remove book references
+            if(updateUserBookReferences(bookId, null)) {
+                logger.log(Level.INFO,"User book references updated successfully for book deletion");
+            } else {
+                logger.log(Level.SEVERE,"Failed to update user book references for book deletion with ID: " + bookId);
+            }
+
+            return success;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error deleting book with ID: " + bookId, e);
             return false;
         }
     }

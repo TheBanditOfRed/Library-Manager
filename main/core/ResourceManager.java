@@ -19,7 +19,7 @@ public class ResourceManager {
     static {
         try {
             setLocale(Locale.getDefault());
-            logger.info("Locale set to: " + currentLocale);
+            logger.log(Level.INFO, "Locale set to: " + currentLocale);
         } catch (Exception e) {
             setLocale(Locale.ENGLISH);
             logger.log(Level.SEVERE, "Failed to set default locale, using English", e);
@@ -46,7 +46,7 @@ public class ResourceManager {
      * @param languageTag A string representing the language to use
      */
     public static void setLocale(String languageTag) {
-        logger.info("Changing application locale to: " + languageTag);
+        logger.log(Level.INFO, "Changing application locale to: " + languageTag);
         try {
             if (languageTag.length() == 2) {
                 setLocale(Locale.forLanguageTag(languageTag));
@@ -58,7 +58,7 @@ public class ResourceManager {
             } else {
                 setLocale(Locale.forLanguageTag(languageTag));
             }
-            logger.info("Successfully changed locale to: " + languageTag);
+            logger.log(Level.INFO, "Successfully changed locale to: " + languageTag);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to change locale to: " + languageTag, e);
         }
@@ -75,7 +75,7 @@ public class ResourceManager {
         try {
             return resourceBundle.getString(key);
         } catch (Exception e) {
-            logger.warning("Missing resource key: " + key + " for locale: " + currentLocale);
+            logger.log(Level.WARNING, "Missing resource key: " + key + " for locale: " + currentLocale);
             return "Missing translation for key: " + key;
         }
     }
@@ -92,7 +92,7 @@ public class ResourceManager {
         try {
             return MessageFormat.format(resourceBundle.getString(key), params);
         } catch (Exception e) {
-            logger.warning("Missing resource key: " + key + " for locale: " + currentLocale);
+            logger.log(Level.WARNING, "Missing resource key: " + key + " for locale: " + currentLocale);
             return "Missing translation for key: " + key;
         }
     }

@@ -13,6 +13,7 @@ import java.util.logging.Logger;
  * Utility class for handling JSON file operations in the library management system.
  * Provides methods for reading and writing JSON objects and arrays to files.
  */
+@SuppressWarnings("UnnecessaryContinue")
 public class JsonManager {
     private static final Logger logger = Logger.getLogger(JsonManager.class.getName());
 

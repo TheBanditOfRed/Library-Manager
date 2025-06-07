@@ -1,11 +1,11 @@
 [
   {
-    "BookID": "B901411",
+    "BookID": "C901411",
     "Title": "Introduction to Algorithms",
     "Author": "Thomas H. Cormen",
     "Publisher": "MIT Press",
     "Available": 4,
-    "OnLoan": 3
+    "OnLoan": 2
   },
   {
     "BookID": "A218177",
@@ -13,6 +13,70 @@
     "Author": "Stuart Russell",
     "Publisher": "MIT Press",
     "Available": 0,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "CX124076",
+    "Title": "The Wind Below Ashes",
+    "Author": "Mira Valtor",
+    "Publisher": "Hollow Fern Press",
+    "Available": 8,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "OI931359",
+    "Title": "Gears of the Forgotten Sky",
+    "Author": "Thom Rindle",
+    "Publisher": "Quartz Lantern Books",
+    "Available": 6,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "IJ506610",
+    "Title": "The Memory Engine",
+    "Author": "Calyx Noreen",
+    "Publisher": "Ironvale Publishing",
+    "Available": 2,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "LC751422",
+    "Title": "Echoes in the Fogspire",
+    "Author": "Elira Nomis",
+    "Publisher": "Pale Root House",
+    "Available": 6,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "CJ694202",
+    "Title": "A Violet Reckoning",
+    "Author": "Dray Venholt",
+    "Publisher": "Ember Quill Editions",
+    "Available": 3,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "PE982127",
+    "Title": "Beneath the Hollow Sun",
+    "Author": "Arden Lys",
+    "Publisher": "Blackrope \u0026 Sons",
+    "Available": 5,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "BH758220",
+    "Title": "The Alabaster Signal",
+    "Author": "S.K. Marrow",
+    "Publisher": "Thornwheel Books",
+    "Available": 7,
+    "OnLoan": 0
+  },
+  {
+    "BookID": "RU483347",
+    "Title": "How the River Remembers",
+    "Author": "Jesha Kael",
+    "Publisher": "Paperwing \u0026 Co.",
+    "Available": 6,
     "OnLoan": 0
   }
 ]

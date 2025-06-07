@@ -210,13 +210,17 @@ public class LoggingManager {
     
     /**
      * Gets the current log directory path.
+     * 
+     * @return The absolute path to the log directory as a string
      */
     public static String getLogDirectory() {
         return Paths.get(LOG_DIR).toAbsolutePath().toString();
     }
     
     /**
-     * Manually flushes all log handlers.
+     * Manually flushes all log handlers to ensure pending log messages are written to their destinations.
+     * This method iterates through all handlers attached to the root logger and calls flush() on each one.
+     * Useful for ensuring logs are written before application shutdown or at critical points.
      */
     public static void flushLogs() {
         Logger rootLogger = Logger.getLogger("");
