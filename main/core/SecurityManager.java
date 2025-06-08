@@ -19,6 +19,8 @@ import java.util.logging.Logger;
  */
 public class SecurityManager {
     private static final Logger logger = Logger.getLogger(SecurityManager.class.getName());
+
+    /** Constants for AES-GCM encryption parameters */
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
     private static final int SALT_LENGTH = 16;

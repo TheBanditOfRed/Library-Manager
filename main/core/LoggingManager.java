@@ -14,10 +14,11 @@ import java.util.logging.*;
  * and provides custom formatting for log messages.
  */
 public class LoggingManager {
+    /** Directory and file settings for logging */
     private static final String LOG_DIR = "logs";
-    private static final String LOG_FILE_PREFIX = "library_";
-    private static final long MAX_LOG_SIZE = 10 * 1024 * 1024; // 10MB per file
-    private static final int MAX_LOG_FILES = 5; // Keep 5 log files maximum
+    private static final String LOG_FILE_PREFIX = "library-manager_";
+    private static final long MAX_LOG_SIZE = 10 * 1024 * 1024;
+    private static final int MAX_LOG_FILES = 5;
     private static boolean isInitialized = false;
     
     /**

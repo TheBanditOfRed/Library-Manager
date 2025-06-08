@@ -13,9 +13,15 @@ import java.util.logging.Logger;
  */
 public class ResourceManager {
     private static final Logger logger = Logger.getLogger(ResourceManager.class.getName());
+
+    /** ResourceBundle for localized messages */
     private static ResourceBundle resourceBundle;
+
+    /** Current locale of the application */
     private static Locale currentLocale;
 
+    //* Static initializer to set the default locale based on the system settings.
+    //* If setting the default locale fails, it falls back to English.
     static {
         try {
             setLocale(Locale.getDefault());

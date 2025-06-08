@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 public class LoginPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(LoginPanel.class.getName());
 
-
     /** Password input field for user authentication */
     private final JPasswordField passwordField;
 
@@ -218,7 +217,6 @@ public class LoginPanel extends JPanel {
      * @param gui The GUI instance to update the login panel for
      */
     public static void updateLoginPanel(GUI gui) {
-        Container contentPane = gui.getContentPane();
         Component[] components = gui.cardPanel.getComponents();
         
         // Find and remove old login panel

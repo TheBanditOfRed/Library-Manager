@@ -6,7 +6,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Utility class for GUI-related helper methods.
+ * DialogUtils provides utility methods for displaying dialogs in the library management system.
+ * It includes methods for showing error dialogs with appropriate logging.
  */
 public class DialogUtils {
     private static final Logger logger = Logger.getLogger(DialogUtils.class.getName());

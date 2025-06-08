@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 public class FeeCalculator {
     private static final Logger logger = Logger.getLogger(FeeCalculator.class.getName());
 
+    /** Predefined rates for different user types */
     private static final float STUDENT_RATE = 0.5f;
     private static final float PUBLIC_RATE = 1.0f;
     private static final float ADMIN_RATE = 0.0f;

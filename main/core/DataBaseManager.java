@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import main.core.UserTypeMapper;
 
 /**
  * Manages database operations for the library management system, handling user authentication,
@@ -17,6 +18,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("UnnecessaryContinue")
 public class DataBaseManager {
     private static final Logger logger = Logger.getLogger(DataBaseManager.class.getName());
+
     public final String BOOK_DATABASE_PATH = "main/resources/data/BookData.json";
     public final String USER_DATABASE_PATH = "main/resources/data/UserData.json";
 
@@ -790,4 +792,205 @@ public class DataBaseManager {
             return false;
         }
     }
+
+    /**
+     * Adds a new user to the database.
+     *
+     * @param userId The ID of the user to add
+     * @param userName The name of the user to add
+     * @param userPassword The password for the user to add
+     * @param userType The type of user (Students, General Public)
+     * @return true if the user was successfully added, false otherwise
+     */
+    public boolean addUser(String userId, String userName, String userPassword, String userType) {
+        try {
+            logger.log(Level.INFO, "Adding new user: " + userName + " with ID: " + userId);
+
+            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
+            if (userData == null) {
+                logger.log(Level.SEVERE, "No user data found in database file: " + USER_DATABASE_PATH);
+                return false;
+            }
+
+            // Check if user already exists
+            JsonObject existingUser = findUser(userId, userPassword);
+            if (existingUser != null) {
+                logger.log(Level.WARNING, "User with ID " + userId + " already exists");
+                return false;
+            }
+
+            // Create new user object
+            JsonObject newUser = new JsonObject();
+            newUser.addProperty("UserID", main.core.SecurityManager.encrypt(userId, userPassword));
+            newUser.addProperty("Name", main.core.SecurityManager.encrypt(userName, userPassword));
+            newUser.addProperty("Password", main.core.SecurityManager.encrypt(userPassword, userPassword));
+            newUser.add("Books", new JsonArray());
+
+            JsonArray userTypeArray = userData.getAsJsonArray(userType);
+
+            if (userTypeArray == null) {
+                logger.log(Level.SEVERE, "No user type array found in database file: " + USER_DATABASE_PATH);
+                return false;
+            }
+
+            userTypeArray.add(newUser);
+
+            // Save updated data
+            return JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
+
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error adding user: " + userName, e);
+            return false;
+        }
+    }
+
+    /**
+     * Removes a user from the database.
+     *
+     * @param userId The ID of the user to remove
+     * @param password The user's password for verification
+     * @return true if the user was successfully removed, false otherwise
+     */
+    public boolean removeUser(String userId, String password) {
+        try {
+            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
+            if (userData == null) {
+                logger.log(Level.SEVERE, "Failed to read user database");
+                return false;
+            }
+
+            // Find and remove user from appropriate category
+            for (String userType : new String[]{"Students", "General Public"}) {
+                JsonArray userArray = userData.getAsJsonArray(userType);
+                if (userArray != null) {
+                    for (int i = 0; i < userArray.size(); i++) {
+                        JsonObject user = userArray.get(i).getAsJsonObject();
+                        try {
+                            String decryptedUserId = SecurityManager.decrypt(
+                                    user.get("UserID").getAsString(), password);
+                            if (decryptedUserId.equals(userId)) {
+                                userArray.remove(i);
+                                return JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
+                            }
+                        } catch (Exception e) {
+                            // Continue to next user if decryption fails
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            logger.log(Level.WARNING, "User not found for removal: " + userId);
+            return false;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to remove user from database: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    public boolean updateUser(String originalUserId, String userName, String userPassword, String userType) {
+        try {
+            logger.log(Level.INFO, "Updating user with ID: " + originalUserId);
+
+            JsonObject userData = JsonManager.readJsonFile(USER_DATABASE_PATH);
+            if (userData == null) {
+                logger.log(Level.SEVERE, "No user data found for update operation");
+                return false;
+            }
+
+            // Map user type to database key
+            String newTypeKey = UserTypeMapper.mapToCanonical(userType);
+
+            // Find and update the user
+            for (String currentType : new String[]{"Students", "General Public", "Admins"}) {
+                JsonArray users = userData.getAsJsonArray(currentType);
+                if (users != null) {
+                    for (int i = 0; i < users.size(); i++) {
+                        JsonObject user = users.get(i).getAsJsonObject();
+                        try {
+                            String decryptedUserId = SecurityManager.decrypt(
+                                    user.get("UserID").getAsString(), userPassword);
+
+                            if (decryptedUserId.equals(originalUserId)) {
+                                // Update user details
+                                user.addProperty("UserID", SecurityManager.encrypt(originalUserId, userPassword));
+                                user.addProperty("Name", SecurityManager.encrypt(userName, userPassword));
+                                user.addProperty("Password", SecurityManager.encrypt(userPassword, userPassword));
+
+                                // Handle type change if necessary
+                                if (!currentType.equals(newTypeKey)) {
+                                    if (!moveUserToNewType(userData, user, currentType, newTypeKey)) {
+                                        logger.log(Level.SEVERE, "Failed to move user to new type: " + newTypeKey);
+                                        return false;
+                                    }
+                                }
+
+                                // Save and return
+                                boolean success = JsonManager.saveJsonFile(userData, USER_DATABASE_PATH);
+                                if (success) {
+                                    logger.log(Level.INFO, "Successfully updated user: " + originalUserId);
+                                } else {
+                                    logger.log(Level.SEVERE, "Failed to save user data after update");
+                                }
+                                return success;
+                            }
+                        } catch (Exception e) {
+                            logger.log(Level.FINE, "Failed to decrypt user ID during search", e);
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            // User not found
+            logger.log(Level.WARNING, "User with ID " + originalUserId + " not found for update");
+            return false;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error updating user: " + originalUserId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Moves a user from one type category to another.
+     *
+     * @param userData The complete user data JSON object
+     * @param user The user object to move
+     * @param oldType The old user type category
+     * @param newType The new user type category
+     * @return true if the move was successful, false otherwise
+     */
+    private boolean moveUserToNewType(JsonObject userData, JsonObject user, String oldType, String newType) {
+        try {
+            // Remove from old type
+            JsonArray oldTypeArray = userData.getAsJsonArray(oldType);
+            if (oldTypeArray != null) {
+                for (int i = 0; i < oldTypeArray.size(); i++) {
+                    if (oldTypeArray.get(i).getAsJsonObject().equals(user)) {
+                        oldTypeArray.remove(i);
+                        break;
+                    }
+                }
+            }
+
+            // Add to new type
+            JsonArray newTypeArray = userData.getAsJsonArray(newType);
+            if (newTypeArray == null) {
+                newTypeArray = new JsonArray();
+                userData.add(newType, newTypeArray);
+            }
+            newTypeArray.add(user);
+
+            logger.log(Level.INFO, "Successfully moved user from " + oldType + " to " + newType);
+            return true;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error moving user between types", e);
+            return false;
+        }
+    }
+
 }

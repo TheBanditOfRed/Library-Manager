@@ -2,12 +2,14 @@ package main.ui.utils;
 
 import com.google.gson.JsonObject;
 import main.core.ResourceManager;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Utility class for handling various status-related operations in the library management system.
+ * Provides methods to get status messages, validate book fields, and manage card layouts.
+ */
 public class StatusUtils {
     private static final Logger logger = Logger.getLogger(StatusUtils.class.getName());
 
@@ -105,5 +107,9 @@ public class StatusUtils {
             logger.log(Level.INFO, "Numeric validation failed for fields: " + e.getMessage());
             return true;
         }
+    }
+
+    public static boolean validateNewUserFields(String userId, String userName, String userPassword, String userType){
+        return userId.isEmpty() || userName.isEmpty() || userPassword.isEmpty() || userType.isEmpty();
     }
 }
