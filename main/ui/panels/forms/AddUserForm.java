@@ -21,7 +21,11 @@ import java.util.logging.Logger;
 
 import static main.ui.utils.StatusUtils.getStatusMessage;
 
-
+/**
+ * Provides functionality for adding and editing user forms in the library management system.
+ * Includes methods to create panels for adding new users, editing existing users, and managing user books.
+ * Handles user input validation, database operations, and UI updates.
+ */
 public class AddUserForm {
     private static final Logger logger = Logger.getLogger(AddUserForm.class.getName());
 

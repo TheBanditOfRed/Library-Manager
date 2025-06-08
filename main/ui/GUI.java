@@ -53,9 +53,41 @@ public class GUI extends JFrame {
     private void initializeWindow() {
         setTitle(ResourceManager.getString("app.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
+        
+        // Load saved window size and position from preferences
+        int width = prefs.getInt("window.width", 1000);
+        int height = prefs.getInt("window.height", 700);
+        int x = prefs.getInt("window.x", -1);
+        int y = prefs.getInt("window.y", -1);
+        
+        setSize(width, height);
+        setResizable(true);
+        
+        if (x >= 0 && y >= 0) {
+            setLocation(x, y);
+        } else {
+            setLocationRelativeTo(null);
+        }
+        
         setApplicationIcon();
-        setLocationRelativeTo(null);
+        
+        // Save window state when closing
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                saveWindowState();
+            }
+        });
+    }
+
+    /**
+     * Saves the current window state to preferences.
+     */
+    private void saveWindowState() {
+        prefs.putInt("window.width", getWidth());
+        prefs.putInt("window.height", getHeight());
+        prefs.putInt("window.x", getX());
+        prefs.putInt("window.y", getY());
     }
 
     /**

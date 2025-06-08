@@ -110,6 +110,15 @@ public class StatusUtils {
     }
 
     public static boolean validateNewUserFields(String userId, String userName, String userPassword, String userType){
-        return userId.isEmpty() || userName.isEmpty() || userPassword.isEmpty() || userType.isEmpty();
+        boolean emptyFields = userId.isEmpty() || userName.isEmpty() || userPassword.isEmpty() || userType.isEmpty();
+        boolean isInteger = Integer.parseInt(userId) >= 0;
+
+        if (emptyFields || !isInteger){
+            logger.log(Level.INFO, "User validation failed: empty fields or invalid user ID");
+            return true;
+        } else {
+            logger.log(Level.FINE, "User validation passed for user: " + userId);
+            return false;
+        }
     }
 }
