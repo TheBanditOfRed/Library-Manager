@@ -8,7 +8,7 @@ import main.core.SecurityManager;
 import main.core.SessionManager;
 import main.ui.GUI;
 import main.ui.utils.DialogUtils;
-import main.ui.utils.FeeCalculator;
+import main.core.FeeManager;
 import main.ui.utils.StatusUtils;
 import main.ui.utils.TableUtils;
 
@@ -32,10 +32,13 @@ public class MyBooksPanel extends JPanel {
     /** Table model for the user's borrowed books */
     public static DefaultTableModel myBooksTableModel;
 
+    /** Label displaying total fines if any exist */
+    public static JLabel totalFinesLabel;
+
     /**
      * Creates the panel displaying books borrowed by the current user.
      * Contains a table showing book titles, issue dates, due dates, and status.
-     * Includes a return button at the bottom (functionality not implemented).
+     * Includes a return button at the bottom and displays total fines if any exist.
      *
      * @return JPanel containing the user's borrowed books interface
      * @param gui The GUI instance to which the panel will be added
@@ -55,13 +58,26 @@ public class MyBooksPanel extends JPanel {
         myBooksTableModel = tableComponents.model();
 
         JButton returnButton = new JButton(ResourceManager.getString("button.return.text"));
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(returnButton);
+        
+        // Create fines label
+        totalFinesLabel = new JLabel();
+        totalFinesLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        totalFinesLabel.setFont(totalFinesLabel.getFont().deriveFont(Font.BOLD, 14f));
+        totalFinesLabel.setForeground(Color.RED);
+        totalFinesLabel.setVisible(false); // Initially hidden
+        
+        // Create button panel with fines display
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+        buttonPanel.add(totalFinesLabel, BorderLayout.NORTH);
+        
+        JPanel returnButtonPanel = new JPanel();
+        returnButtonPanel.add(returnButton);
+        buttonPanel.add(returnButtonPanel, BorderLayout.CENTER);
 
         panel.add(tableComponents.scrollPane(), BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Store references for access by other methods (e.g., loadMyBooksToTable)
+        // Store references for access by other methods
         myBooksPanel = panel;
 
         returnButton.addActionListener(_ -> {
@@ -104,10 +120,10 @@ public class MyBooksPanel extends JPanel {
                                 int daysOverdue = dbm.getDaysOverdue(dateDue);
 
                                 if (daysOverdue > 0) {
-                                    double lateFee = FeeCalculator.calculateFee(daysOverdue, dbm.getUserType(SessionManager.getInstance().getCurrentUser(), SessionManager.getInstance().getKey()));
+                                    double lateFee = FeeManager.calculateFee(daysOverdue, dbm.getUserType(SessionManager.getInstance().getCurrentUser(), SessionManager.getInstance().getKey()));
 
                                     int response = JOptionPane.showConfirmDialog(panel,
-                                            ResourceManager.getString("confirm.return.overdue", lateFee),
+                                            ResourceManager.getString("confirm.return.overdue", String.format("%.2f", lateFee)),
                                             ResourceManager.getString("confirm"),
                                             JOptionPane.YES_NO_OPTION);
 
@@ -134,6 +150,8 @@ public class MyBooksPanel extends JPanel {
                                         JOptionPane.INFORMATION_MESSAGE);
 
                                 loadMyBooksToTable(gui, myBooksTableModel);
+
+                                updateFinesDisplay();
                             } else {
                                 DialogUtils.showErrorDialog(panel,
                                         ResourceManager.getString("error.return.failed"),
@@ -309,6 +327,9 @@ public class MyBooksPanel extends JPanel {
                         ResourceManager.getString("warning")
                 );
             }
+
+            updateFinesDisplay();
+            
         } catch (Exception e) {
             model.setRowCount(0);
             model.addRow(new Object[]{
@@ -321,4 +342,24 @@ public class MyBooksPanel extends JPanel {
             );
         }
     }
+
+    /**
+     * Updates the total fines display based on current borrowed books.
+     * Shows the fines label only if there are outstanding fines.
+     */
+    private static void updateFinesDisplay() {
+        if (totalFinesLabel == null) {
+            return;
+        }
+        
+        double totalFines = FeeManager.calculateTotalFines();
+        
+        if (totalFines > 0) {
+            totalFinesLabel.setText(ResourceManager.getString("fines.total.outstanding", String.format("%.2f", totalFines)));
+            totalFinesLabel.setVisible(true);
+        } else {
+            totalFinesLabel.setVisible(false);
+        }
+    }
+
 }

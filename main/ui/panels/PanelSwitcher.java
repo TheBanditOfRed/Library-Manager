@@ -28,7 +28,7 @@ public class PanelSwitcher extends JPanel {
 
         try {
             try {
-                MainApplicationPanel.welcomeLabel.setText(ResourceManager.getString("welcome.user", SessionManager.getInstance().getCurrentUser()));
+                MainApplicationPanel.welcomeLabel.setText(ResourceManager.getString("welcome.user", SessionManager.getInstance().getCurrentUserName()));
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Failed to update welcome message", e);
             }
