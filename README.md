@@ -87,7 +87,7 @@ Download and run the latest installer for your platform from the [releases](http
 |   **Localisation**    | ✅ Completed | Multi-language support with full translations in English and Portuguese, persistent language settings between sessions                              |  Cross-Platform  |
 |  **Data Management**  | ✅ Completed | JSON-based data persistence with encryption for sensitive information                                                                               |  Cross-Platform  |
 | **Windows Installer** | ✅ Completed | MSI installer package with bundled JRE, Start Menu integration, and desktop shortcuts                                                               |     Windows      |
-|  **macOS Installer**  |    ❌ WIP    | DMG installer package with macOS-specific icons and application bundle structure                                                                    |      macOS       |
+|  **macOS Installer**  | ✅ Completed | DMG installer package with macOS-specific icons and application bundle structure                                                                    |      macOS       |
 |  **Linux Installer**  | ✅ Completed | DEB package with Linux desktop integration and application shortcuts                                                                                |      Linux       |
 
 ## License
