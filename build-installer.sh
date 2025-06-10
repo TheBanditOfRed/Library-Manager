@@ -48,7 +48,6 @@ if [[ "$OS_TYPE" == "windows" ]]; then
 
 elif [[ "$OS_TYPE" == "macos" ]]; then
 
-    # macOS installer not tested yet
     jpackage --type dmg --input dist --dest installers/macos --name "Library Manager" --main-jar LibraryManager.jar --main-class LibraryManagementSystem --app-version $APP_VERSION --description "Library Management System" --copyright "Copyright 2025" --mac-package-name "Library Manager" --icon src/resources/icon/icon.icns
 
 else
