@@ -51,13 +51,10 @@ Library Manager is a comprehensive library management system designed to automat
 
 ## Installation
 
-### Option 1: Using the Installer (Windows)
-1. Download the latest installer from the releases page
-2. Run the "Library Manager-1.1.msi" installer
-3. Follow the installation wizard instructions
-4. Launch the application from the Start Menu or desktop shortcut
+### Option 1: Using the Installer
+Download and run the latest installer for your platform from the [releases](https://github.com/TheBanditOfRed/Library-Manager/releases) page
 
-### Option 2: Building from Source
+### Option 2: Building from Source (Cross-Platform)
 1. Clone the repository:
    ```
    git clone https://github.com/TheBanditOfRed/Library-Manager.git
@@ -65,27 +62,33 @@ Library Manager is a comprehensive library management system designed to automat
 
 2. Build the installer using the provided script:
    ```
-   build-installer.bat
+   # On Windows (Git Bash), macOS, or Linux:
+   ./build-installer.sh
    ```
 
-3. Find the generated installer in the "installer" directory
+3. Find the generated installer in the "installers/[your-platform]" directory
 
-### Option 3: Development Setup
+### Option 3: Development Setup (Cross-Platform)
 1. Clone the repository
 2. Open the project in your preferred Java IDE
-3. Run the main application class (`main.LibraryManagementSystem`)
+3. Run the main application class ([LibraryManagementSystem.java](src/LibraryManagementSystem.java))
 
 ## Usage
 1. Launch the application
 2. The system will automatically detect your language preference or default to English
 3. Use the login system to access different user levels (Admin, Student, General Public)
-   - See the [Unencrypted User Data](src/main/resources/unencrypted_user_data.txt) file for the example user credentials provided for testing
-
 4. Navigate through the intuitive GUI to manage books, users, and borrowing operations
 5. Access the options menu to change language settings or perform administrative tasks
 
 ## Project Status
-✅ **COMPLETED** - This project is feature-complete and ready for production use.
+|       Component       |   Status    | Description                                                                                                                                         | Platform Support |
+|:---------------------:|:-----------:|-----------------------------------------------------------------------------------------------------------------------------------------------------|:----------------:|
+| **Core Application**  | ✅ Completed | The main library management system with all features implemented including user management, book management, borrowing system, and fine calculation |  Cross-Platform  |
+|   **Localisation**    | ✅ Completed | Multi-language support with full translations in English and Portuguese, persistent language settings between sessions                              |  Cross-Platform  |
+|  **Data Management**  | ✅ Completed | JSON-based data persistence with encryption for sensitive information                                                                               |  Cross-Platform  |
+| **Windows Installer** | ✅ Completed | MSI installer package with bundled JRE, Start Menu integration, and desktop shortcuts                                                               |     Windows      |
+|  **macOS Installer**  |    ❌ WIP    | DMG installer package with macOS-specific icons and application bundle structure                                                                    |      macOS       |
+|  **Linux Installer**  | ✅ Completed | DEB package with Linux desktop integration and application shortcuts                                                                                |      Linux       |
 
 ## License
 See the [LICENSE](LICENSE) file for details about the project license.
