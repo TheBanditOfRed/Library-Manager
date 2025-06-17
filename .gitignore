@@ -92,8 +92,8 @@ library_project_en.md
 
 # Test Files
 main/core/TestDataBaseManager.java
-LM.puml
 
 # Build tools
 sources.txt
 /installers/
+/diagrams/
