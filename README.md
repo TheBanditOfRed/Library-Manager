@@ -1,4 +1,10 @@
 # Library Manager - A Library Management System
+[![Java Version](https://img.shields.io/badge/Java-22%2B-brightgreen)](https://openjdk.java.net/)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-yellow.svg)](LICENSE)
+[![Gson](https://img.shields.io/badge/Gson-2.9.0-blue)](https://github.com/google/gson)
+[![Platform](https://img.shields.io/badge/Platform-Cross--Platform-lightgrey)](https://github.com/TheBanditOfRed/Library-Manager/releases)
+[![Status](https://img.shields.io/badge/Status-Completed-success)](#project-status)
+
 ![icon-256.png](src/main/resources/icon/icon-256.png)
 
 ## Overview
