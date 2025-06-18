@@ -73,8 +73,8 @@ public class AppDataManager {
         String userDataDir = getUserDataDirectory();
         
         // Initialize data files
-        initializeDataFile("/resources/data/BookData.json", userDataDir + File.separator + "BookData.json");
-        initializeDataFile("/resources/data/UserData.json", userDataDir + File.separator + "UserData.json");
+        initializeDataFile("/data/BookData.json", userDataDir + File.separator + "BookData.json");
+        initializeDataFile("/data/UserData.json", userDataDir + File.separator + "UserData.json");
         
         logger.info("User data files initialized in: " + userDataDir);
     }

@@ -127,12 +127,12 @@ public class GUI extends JFrame {
 
             // Try to load multiple icon sizes
             String[] iconPaths = {
-                    "/resources/icon/icon-16.png",
-                    "/resources/icon/icon-32.png",
-                    "/resources/icon/icon-64.png",
-                    "/resources/icon/icon-128.png",
-                    "/resources/icon/icon-256.png",
-                    "/resources/icon/icon.png" // fallback
+                    "/icon/icon-16.png",
+                    "/icon/icon-32.png",
+                    "/icon/icon-64.png",
+                    "/icon/icon-128.png",
+                    "/icon/icon-256.png",
+                    "/icon/icon.png" // fallback
             };
 
             for (String path : iconPaths) {

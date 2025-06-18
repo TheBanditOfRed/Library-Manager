@@ -1,5 +1,5 @@
 # Library Manager - A Library Management System
-![icon-256.png](src/resources/icon/icon-256.png)
+![icon-256.png](src/main/resources/icon/icon-256.png)
 
 ## Overview
 Library Manager is a comprehensive library management system designed to automate the operations of academic and public libraries. The system handles book inventory management, user authentication, borrowing and returning processes, and fine calculations.
@@ -71,12 +71,13 @@ Download and run the latest installer for your platform from the [releases](http
 ### Option 3: Development Setup (Cross-Platform)
 1. Clone the repository
 2. Open the project in your preferred Java IDE
-3. Run the main application class ([LibraryManagementSystem.java](src/LibraryManagementSystem.java))
+3. Run the main application class ([LibraryManagementSystem.java](src/main/java/LibraryManagementSystem.java))
 
 ## Usage
 1. Launch the application
 2. The system will automatically detect your language preference or default to English
 3. Use the login system to access different user levels (Admin, Student, General Public)
+    * See [UserDataUnencrypted.json](src/main/resources/data/UserDataUnencrypted.json) for example user login credentials
 4. Navigate through the intuitive GUI to manage books, users, and borrowing operations
 5. Access the options menu to change language settings or perform administrative tasks
 

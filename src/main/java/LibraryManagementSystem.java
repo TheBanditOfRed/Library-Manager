@@ -22,16 +22,16 @@ public class LibraryManagementSystem {
      * @param args Command line arguments (not used)
      */
     public static void main(String[] args) {
-    AppDataManager.initializeUserDataFiles();
-    
-    LoggingManager.initializeLogging();
+        AppDataManager.initializeUserDataFiles();
+        
+        LoggingManager.initializeLogging();
 
-    logger.info("=== Library Management System Starting ===");
-    logger.info("Java Version: " + System.getProperty("java.version"));
-    logger.info("Operating System: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
-    logger.info("User Directory: " + System.getProperty("user.dir"));
-    logger.info("Data Directory: " + AppDataManager.getUserDataDirectory());
-    logger.info("Log Directory: " + AppDataManager.getLogsDirectory());
+        logger.info("=== Library Management System Starting ===");
+        logger.info("Java Version: " + System.getProperty("java.version"));
+        logger.info("Operating System: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+        logger.info("User Directory: " + System.getProperty("user.dir"));
+        logger.info("Data Directory: " + AppDataManager.getUserDataDirectory());
+        logger.info("Log Directory: " + AppDataManager.getLogsDirectory());
     
         try {
             logger.info("Setting system look and feel...");

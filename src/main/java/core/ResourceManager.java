@@ -40,7 +40,7 @@ public class ResourceManager {
      */
     public static void setLocale(Locale locale) {
         currentLocale = locale;
-        resourceBundle = ResourceBundle.getBundle("resources.lang.messages", locale);
+        resourceBundle = ResourceBundle.getBundle("lang.messages", locale);
     }
 
     /**
